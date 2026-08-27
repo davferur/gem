@@ -1,0 +1,2074 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0D1B2A">
+<title>GEM — Gestión de Cartera</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<style>
+:root{
+  --navy:#0D1B2A; --navy2:#13293f; --gold:#C6971D; --gold-l:#E0B834;
+  --gold-lt:#F4A623; --cream:#FBF7EE; --marfil:#F5F1E6; --paper:#FFFFFF;
+  --ink:#1A1A2E; --gray:#6B7280; --gray-l:#9AA0A8; --line:#E8E2D4;
+  --green:#1E8E5A; --green-bg:#E7F5ED; --red:#C0392B; --red-bg:#FBEAE7;
+  --red-dark:#7B241C; --vino:#5B2333; --orange:#E67E22; --orange-bg:#FDF1E3;
+  --yellow:#C9A227; --yellow-bg:#FBF4D9; --blue:#2E6BB0; --blue-bg:#E8F0F9;
+  --shadow:0 1px 3px rgba(13,27,42,.07),0 4px 16px rgba(13,27,42,.04);
+  --shadow-lg:0 8px 30px rgba(13,27,42,.12);
+  --r:14px; --r-sm:9px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--cream);color:var(--ink);font-size:15.5px;line-height:1.55;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+input,select,textarea{font-family:inherit;font-size:14px}
+a{color:inherit;text-decoration:none}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:#d8d2c4;border-radius:6px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ---------- LOGIN ---------- */
+#login{position:fixed;inset:0;background:linear-gradient(135deg,var(--navy),var(--navy2));display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px}
+.login-card{background:var(--paper);border-radius:20px;padding:40px 34px;width:100%;max-width:390px;box-shadow:var(--shadow-lg);text-align:center;animation:pop .4s ease}
+@keyframes pop{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}
+.login-card img{width:150px;height:auto;margin-bottom:8px}
+.login-card h1{font-size:18px;color:var(--navy);margin-bottom:4px}
+.login-card .sub{font-size:12.5px;color:var(--gray);margin-bottom:26px}
+.login-card label{display:block;text-align:left;font-size:12px;font-weight:600;color:var(--gray);margin:0 0 5px 2px}
+.login-card input{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:var(--r-sm);margin-bottom:16px;background:var(--cream)}
+.login-card input:focus{outline:none;border-color:var(--gold)}
+.btn-login{width:100%;padding:13px;background:linear-gradient(135deg,var(--gold),var(--gold-lt));color:#fff;font-weight:700;font-size:15px;border-radius:var(--r-sm);box-shadow:0 4px 14px rgba(198,151,29,.35);transition:transform .1s}
+.btn-login:active{transform:scale(.98)}
+.login-note{font-size:11px;color:var(--gray-l);margin-top:18px;line-height:1.5}
+.user-card{display:flex;align-items:center;gap:12px;padding:11px 13px;border:1.5px solid var(--line);border-radius:12px;cursor:pointer;transition:.12s;background:#fff}
+.user-card:hover{border-color:var(--gold);background:var(--cream);transform:translateX(2px)}
+.user-card .av2{width:42px;height:42px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0}
+.user-card .un{font-weight:700;color:var(--navy);font-size:13.5px}
+.user-card .ur{font-size:11.5px;color:var(--red);font-weight:600}
+.user-card .uc{font-size:11px;color:var(--gray)}
+.empresa-bar{display:flex;gap:6px;padding:9px 22px;background:var(--paper);border-bottom:1px solid var(--line);align-items:center}
+.empresa-btn{padding:7px 15px;border-radius:20px;font-size:12.5px;font-weight:700;border:1.5px solid var(--line);color:var(--gray);background:#fff}
+.empresa-btn.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.role-badge{font-size:10px;font-weight:800;padding:2px 9px;border-radius:20px;letter-spacing:.3px;text-transform:uppercase}
+
+/* ---------- LAYOUT ---------- */
+#app{display:none}
+.shell{display:flex;min-height:100vh}
+.sidebar{width:240px;background:var(--navy);color:#cdd6e0;flex-shrink:0;display:flex;flex-direction:column;position:fixed;top:0;bottom:0;left:0;z-index:100;transition:transform .25s}
+.sb-logo{padding:18px 18px 14px;display:flex;align-items:center;gap:11px;border-bottom:1px solid rgba(255,255,255,.08)}
+.sb-logo img{width:40px;height:40px;border-radius:9px;object-fit:cover}
+.sb-logo .t1{font-weight:800;font-size:15px;color:#fff;letter-spacing:.3px}
+.sb-logo .t2{font-size:10px;color:#8b97a6}
+.sb-scroll{flex:1;overflow-y:auto;padding:10px 0}
+.sb-group{padding:12px 20px 5px;font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:#6b7789;font-weight:700}
+.sb-item{display:flex;align-items:center;gap:11px;padding:9px 20px;font-size:13.5px;color:#c3cdd8;cursor:pointer;border-left:3px solid transparent;transition:.12s}
+.sb-item:hover{background:rgba(255,255,255,.05);color:#fff}
+.sb-item.active{background:rgba(198,151,29,.14);color:#fff;border-left-color:var(--gold-lt);font-weight:600}
+.sb-item .ic{width:19px;text-align:center;font-size:15px;flex-shrink:0}
+.sb-item .badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:700;border-radius:9px;padding:1px 6px;min-width:16px;text-align:center}
+.sb-foot{padding:12px 18px;border-top:1px solid rgba(255,255,255,.08);font-size:11px;color:#7c8797}
+
+.main{flex:1;margin-left:240px;min-width:0;display:flex;flex-direction:column}
+.topbar{background:var(--paper);border-bottom:1px solid var(--line);padding:11px 22px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:50}
+.hamb{display:none;font-size:22px;color:var(--navy)}
+.search-global{flex:1;max-width:440px;position:relative}
+.search-global input{width:100%;padding:9px 14px 9px 38px;border:1.5px solid var(--line);border-radius:22px;background:var(--cream);font-size:13px}
+.search-global input:focus{outline:none;border-color:var(--gold);background:#fff}
+.search-global .si{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--gray-l);font-size:14px}
+.search-results{position:absolute;top:44px;left:0;right:0;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow-lg);max-height:380px;overflow-y:auto;z-index:60;display:none}
+.search-results.show{display:block}
+.sr-group{padding:7px 14px 4px;font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--gray-l);letter-spacing:.5px}
+.sr-item{padding:9px 14px;cursor:pointer;border-bottom:1px solid #f4f0e6}
+.sr-item:hover{background:var(--cream)}
+.sr-item .n{font-weight:600;color:var(--navy);font-size:13px}
+.sr-item .d{font-size:11.5px;color:var(--gray)}
+.topbar .user{display:flex;align-items:center;gap:9px;margin-left:auto}
+.topbar .user .av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-lt));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.topbar .user .nm{font-size:12.5px;font-weight:600;color:var(--navy)}
+.topbar .user .rl{font-size:10.5px;color:var(--gray)}
+
+.content{padding:22px;flex:1;max-width:1400px;width:100%}
+.page-head{margin-bottom:18px}
+.page-head h2{font-size:21px;color:var(--navy);font-weight:800;letter-spacing:-.3px}
+.page-head p{font-size:13px;color:var(--gray);margin-top:2px}
+.page-head .row{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}
+
+/* ---------- COMPONENTS ---------- */
+.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.btn{padding:10px 17px;border-radius:var(--r-sm);font-size:14.5px;font-weight:600;display:inline-flex;align-items:center;gap:7px;transition:.12s;white-space:nowrap}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:linear-gradient(135deg,var(--gold),var(--gold-lt));color:#fff;box-shadow:0 3px 10px rgba(198,151,29,.28)}
+.btn-navy{background:var(--navy);color:#fff}
+.btn-ghost{background:#fff;border:1.5px solid var(--line);color:var(--navy)}
+.btn-ghost:hover{border-color:var(--gold);background:var(--cream)}
+.btn-wa{background:#25D366;color:#fff}
+.btn-sm{padding:6px 11px;font-size:12px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:700;padding:4px 12px;border-radius:20px;white-space:nowrap}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:13px;margin-bottom:18px}
+.kpi{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:15px 17px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--gold)}
+.kpi .lbl{font-size:11px;color:var(--gray);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.kpi .val{font-size:27px;font-weight:800;color:var(--navy);margin-top:5px;letter-spacing:-.5px}
+.kpi .sub{font-size:11.5px;color:var(--gray);margin-top:3px}
+.kpi.red::before{background:var(--red)} .kpi.green::before{background:var(--green)}
+.kpi.orange::before{background:var(--orange)} .kpi.blue::before{background:var(--blue)}
+
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:18px;margin-bottom:16px}
+.panel-title{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+
+.toolbar{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.inp{padding:9px 13px;border:1.5px solid var(--line);border-radius:var(--r-sm);background:#fff;font-size:13px}
+.inp:focus{outline:none;border-color:var(--gold)}
+select.inp{cursor:pointer}
+
+table.tbl{width:100%;border-collapse:collapse;font-size:14px}
+table.tbl th{background:var(--navy);color:#fff;font-weight:600;text-align:left;padding:11px 13px;white-space:nowrap;position:sticky;top:0;font-size:12.5px}
+table.tbl th:first-child{border-top-left-radius:10px}
+table.tbl th:last-child{border-top-right-radius:10px}
+table.tbl td{padding:10px 13px;border-bottom:1px solid #f0ece0;white-space:nowrap;font-size:13.5px}
+table.tbl tr:hover td{background:var(--cream)}
+.tbl-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--line);background:#fff}
+
+.semaforo{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:13px;font-weight:700}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+.empty{text-align:center;padding:50px 20px;color:var(--gray)}
+.empty .ic{font-size:38px;margin-bottom:10px;opacity:.5}
+.empty h3{color:var(--navy);font-size:15px;margin-bottom:5px}
+
+/* modal */
+.modal-bg{position:fixed;inset:0;background:rgba(13,27,42,.5);z-index:500;display:none;align-items:center;justify-content:center;padding:18px}
+.modal-bg.show{display:flex}
+.modal{background:#fff;border-radius:16px;max-width:560px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:var(--shadow-lg);animation:pop .25s ease}
+.modal-head{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;border-radius:16px 16px 0 0}
+.modal-head h3{font-size:16px;color:var(--navy)}
+.modal-body{padding:20px}
+.modal-close{font-size:22px;color:var(--gray);cursor:pointer;line-height:1}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:11.5px;font-weight:600;color:var(--gray)}
+.field .inp{width:100%}
+.field.full{grid-column:1/-1}
+
+/* toast */
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:11px 22px;border-radius:22px;font-size:13px;font-weight:600;box-shadow:var(--shadow-lg);z-index:900;opacity:0;transition:.3s;pointer-events:none}
+.toast.show{opacity:1;bottom:30px}
+
+/* mobile bottom bar */
+.mobile-bar{display:none}
+
+@media(max-width:860px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0);box-shadow:var(--shadow-lg)}
+  .main{margin-left:0}
+  .hamb{display:block}
+  .topbar .user .nm,.topbar .user .rl{display:none}
+  .content{padding:14px;padding-bottom:74px}
+  .form-grid{grid-template-columns:1fr}
+  .mobile-bar{display:flex;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);z-index:80;padding:6px 4px}
+  .mobile-bar button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;font-size:10px;color:var(--gray);font-weight:600}
+  .mobile-bar button.active{color:var(--gold)}
+  .mobile-bar button .ic{font-size:19px}
+  .sb-overlay.show{display:block;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:99}
+}
+.sb-overlay{display:none}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<!-- ===== LOGIN ===== -->
+<div id="login">
+  <div class="login-card" style="max-width:460px">
+    <img id="loginLogo" alt="GEM">
+    <h1>Gestión de Cartera</h1>
+    <div class="sub">Grupo Empresarial Marcal — selecciona tu usuario</div>
+    <div id="userPicker" style="display:flex;flex-direction:column;gap:8px;text-align:left;margin-top:6px"></div>
+    <div class="login-note">Versión de demostración (MVP). En producción cada persona ingresará con su propia contraseña. Los datos de esta demo son anonimizados.</div>
+  </div>
+</div>
+
+<!-- ===== APP ===== -->
+<div id="app">
+<div class="sb-overlay" id="sbOverlay" onclick="toggleSidebar(false)"></div>
+<div class="shell">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-logo">
+      <img id="sbLogo" alt="GEM">
+      <div><div class="t1">GEM</div><div class="t2">Gestión de Cartera</div></div>
+    </div>
+    <div class="sb-scroll" id="navMenu"></div>
+    <div class="sb-foot" id="lastUpdate">Sin datos importados aún</div>
+    <div style="padding:0 18px 16px">
+      <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;background:rgba(255,255,255,.06);color:#c3cdd8;border-color:rgba(255,255,255,.15)" onclick="logout()">🔄 Cambiar usuario</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <span class="hamb" onclick="toggleSidebar(true)">☰</span>
+      <div class="search-global">
+        <span class="si">🔍</span>
+        <input id="globalSearch" placeholder="Buscar por nombre, documento, celular, crédito…" oninput="globalSearchHandler(this.value)" onblur="setTimeout(()=>hideSearch(),200)">
+        <div class="search-results" id="searchResults"></div>
+      </div>
+      <div class="user">
+        <div class="av">OH</div>
+        <div><div class="nm">Oscar Huertas</div><div class="rl">Administrador de cartera</div></div>
+      </div>
+    </div>
+    <div class="empresa-bar" id="empresaBar"></div>
+    <div class="content" id="content"></div>
+  </div>
+</div>
+
+<!-- MOBILE BAR -->
+<div class="mobile-bar" id="mobileBar"></div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modalBox"></div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+<script>
+const LOGO_SRC = "data:image/jpeg;base64,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";
+const SEED = [{"nit":"610620971","nombre":"Ricardo López Gómez","celular":"3174744854","categoria":"A","estado":"Pagado","fechaInicio":"2024-06-19","fechaVence":"2027-12-19","diaPago":19,"saldoTotal":2779444,"saldoVencido":0,"cuotaValor":193684,"cuotasPend":14,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"206699713","nombre":"Luis Rojas López","celular":"3231533224","categoria":"A","estado":"Pagado","fechaInicio":"2023-12-18","fechaVence":"2026-12-18","diaPago":18,"saldoTotal":2805957,"saldoVencido":0,"cuotaValor":509434,"cuotasPend":6,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"519635468","nombre":"Carlos Martínez Sánchez","celular":"3104335942","categoria":"A","estado":"Pagado","fechaInicio":"2024-03-05","fechaVence":"2027-09-05","diaPago":5,"saldoTotal":2797485,"saldoVencido":0,"cuotaValor":226263,"cuotasPend":12,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"920911954","nombre":"Óscar Medina Vega","celular":"3178536477","categoria":"A","estado":"Pagado","fechaInicio":"2024-10-09","fechaVence":"2027-10-09","diaPago":9,"saldoTotal":22168205,"saldoVencido":0,"cuotaValor":1698556,"cuotasPend":13,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"33955983","nombre":"Fernando Torres Muñoz","celular":"3158090293","categoria":"A","estado":"Pagado","fechaInicio":"2025-03-14","fechaVence":"2026-08-23","diaPago":14,"saldoTotal":5741638,"saldoVencido":0,"cuotaValor":582174,"cuotasPend":10,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"482382781","nombre":"Diego Torres García","celular":"3202714803","categoria":"A","estado":"Pagado","fechaInicio":"2026-03-25","fechaVence":"2028-03-25","diaPago":25,"saldoTotal":4072157,"saldoVencido":0,"cuotaValor":251594,"cuotasPend":16,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"790902343","nombre":"José Cruz López","celular":"3215437923","categoria":"A","estado":"Pagado","fechaInicio":"2026-01-14","fechaVence":"2028-01-14","diaPago":14,"saldoTotal":4920369,"saldoVencido":0,"cuotaValor":299525,"cuotasPend":16,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"1006607411","nombre":"Camila Rodríguez Rojas","celular":"3137350753","categoria":"A","estado":"Pagado","fechaInicio":"2024-11-21","fechaVence":"2027-11-21","diaPago":21,"saldoTotal":3492632,"saldoVencido":0,"cuotaValor":255083,"cuotasPend":14,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"796605304","nombre":"José Vargas Flores","celular":"3162166941","categoria":"A","estado":"Pagado","fechaInicio":"2026-06-17","fechaVence":"2027-02-17","diaPago":17,"saldoTotal":2000000,"saldoVencido":0,"cuotaValor":278935,"cuotasPend":7,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"641455910","nombre":"María Aguilar Ramírez","celular":"3124905582","categoria":"A","estado":"Pagado","fechaInicio":"2024-11-07","fechaVence":"2027-11-07","diaPago":7,"saldoTotal":5821039,"saldoVencido":0,"cuotaValor":424139,"cuotasPend":14,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"616943772","nombre":"Natalia López Cruz","celular":"3247120868","categoria":"A","estado":"Pagado","fechaInicio":"2025-12-05","fechaVence":"2027-06-05","diaPago":5,"saldoTotal":21439779,"saldoVencido":0,"cuotaValor":2090133,"cuotasPend":10,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"469912919","nombre":"Rosa Díaz Díaz","celular":"3182197935","categoria":"A","estado":"Pagado","fechaInicio":"2025-02-28","fechaVence":"2027-02-28","diaPago":28,"saldoTotal":4009021,"saldoVencido":0,"cuotaValor":559108,"cuotasPend":7,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"545727461","nombre":"Diana Medina Pérez","celular":"3158755439","categoria":"A","estado":"Activo","fechaInicio":"2025-12-19","fechaVence":"2027-12-19","diaPago":19,"saldoTotal":4187559,"saldoVencido":174875,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"491619987","nombre":"Andrés Torres Mendoza","celular":"3115015728","categoria":"A","estado":"Pagado","fechaInicio":"2026-01-23","fechaVence":"2029-01-23","diaPago":23,"saldoTotal":22706721,"saldoVencido":0,"cuotaValor":1061325,"cuotasPend":21,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"697430270","nombre":"Carmen Álvarez Rodríguez","celular":"3225491946","categoria":"A","estado":"Pagado","fechaInicio":"2022-10-21","fechaVence":"2030-10-21","diaPago":21,"saldoTotal":61688876,"saldoVencido":0,"cuotaValor":1527200,"cuotasPend":40,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"695765611","nombre":"José Sánchez Mendoza","celular":"3169375710","categoria":"A","estado":"Pagado","fechaInicio":"2026-05-19","fechaVence":"2029-05-19","diaPago":19,"saldoTotal":14738227,"saldoVencido":0,"cuotaValor":636773,"cuotasPend":23,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"1005376852","nombre":"Andrés Jiménez Mendoza","celular":"3145443951","categoria":"A","estado":"Pagado","fechaInicio":"2025-10-28","fechaVence":"2027-04-28","diaPago":28,"saldoTotal":2012195,"saldoVencido":0,"cuotaValor":229959,"cuotasPend":9,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"584233310","nombre":"Luis Ramírez Rojas","celular":"3215006828","categoria":"A","estado":"Pagado","fechaInicio":"2024-12-30","fechaVence":"2027-12-30","diaPago":30,"saldoTotal":13394883,"saldoVencido":0,"cuotaValor":802000,"cuotasPend":17,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"797381451","nombre":"Héctor Romero Cruz","celular":"3173320821","categoria":"A","estado":"Activo","fechaInicio":"2024-08-13","fechaVence":"2027-06-20","diaPago":13,"saldoTotal":12690033,"saldoVencido":0,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"121181642","nombre":"Miguel Gutiérrez Martínez","celular":"3133564251","categoria":"A","estado":"Pagado","fechaInicio":"2026-02-09","fechaVence":"2027-02-09","diaPago":9,"saldoTotal":4804168,"saldoVencido":0,"cuotaValor":641759,"cuotasPend":7,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"926581620","nombre":"Ricardo Pérez Muñoz","celular":"3127455324","categoria":"A","estado":"Pagado","fechaInicio":"2025-04-11","fechaVence":"2027-04-11","diaPago":11,"saldoTotal":2446763,"saldoVencido":0,"cuotaValor":279354,"cuotasPend":9,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"559907702","nombre":"Andrés Herrera Ortiz","celular":"3103081913","categoria":"A","estado":"Pagado","fechaInicio":"2025-12-03","fechaVence":"2027-06-03","diaPago":3,"saldoTotal":4287954,"saldoVencido":0,"cuotaValor":418033,"cuotasPend":10,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"593002724","nombre":"Paula Rojas López","celular":"3202871534","categoria":"A","estado":"Pagado","fechaInicio":"2026-02-18","fechaVence":"2028-02-18","diaPago":18,"saldoTotal":6973071,"saldoVencido":0,"cuotaValor":447300,"cuotasPend":16,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"994364241","nombre":"Luz Morales Pérez","celular":"3105418934","categoria":"A","estado":"Activo","fechaInicio":"2024-06-14","fechaVence":"2027-06-14","diaPago":14,"saldoTotal":2177310,"saldoVencido":0,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"248515502","nombre":"Miguel Moreno Pérez","celular":"3199517169","categoria":"A","estado":"Pagado","fechaInicio":"2026-04-22","fechaVence":"2026-08-22","diaPago":22,"saldoTotal":1229625,"saldoVencido":0,"cuotaValor":638000,"cuotasPend":2,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"822973878","nombre":"Diana Sánchez García","celular":"3159897858","categoria":"A","estado":"Pagado","fechaInicio":"2023-12-07","fechaVence":"2026-12-07","diaPago":7,"saldoTotal":1401807,"saldoVencido":0,"cuotaValor":254429,"cuotasPend":6,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"716119837","nombre":"Gloria Gómez Herrera","celular":"3251326765","categoria":"A","estado":"Pagado","fechaInicio":"2026-05-11","fechaVence":"2027-05-11","diaPago":11,"saldoTotal":2782539,"saldoVencido":0,"cuotaValor":292461,"cuotasPend":10,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"680381567","nombre":"Ana Mendoza Díaz","celular":"3171971823","categoria":"A","estado":"Activo","fechaInicio":"2024-07-25","fechaVence":"2027-07-25","diaPago":25,"saldoTotal":7087050,"saldoVencido":0,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"189129475","nombre":"Carmen Jiménez Romero","celular":"3129153566","categoria":"A","estado":"Pagado","fechaInicio":"2023-08-18","fechaVence":"2026-08-18","diaPago":18,"saldoTotal":1227347,"saldoVencido":0,"cuotaValor":636875,"cuotasPend":2,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"290068648","nombre":"Álvaro Martínez Moreno","celular":"3148973915","categoria":"A","estado":"Pagado","fechaInicio":"2025-04-07","fechaVence":"2026-10-07","diaPago":7,"saldoTotal":5241943,"saldoVencido":0,"cuotaValor":1393356,"cuotasPend":4,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"928681807","nombre":"Clara Pérez Torres","celular":"3164374754","categoria":"A","estado":"Pagado","fechaInicio":"2026-03-25","fechaVence":"2027-09-25","diaPago":25,"saldoTotal":3450447,"saldoVencido":0,"cuotaValor":278655,"cuotasPend":12,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"821914424","nombre":"Óscar Flores Cruz","celular":"3249683481","categoria":"A","estado":"Pagado","fechaInicio":"2024-12-18","fechaVence":"2026-12-18","diaPago":18,"saldoTotal":1911415,"saldoVencido":0,"cuotaValor":347474,"cuotasPend":6,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"502533863","nombre":"Jorge López Ramírez","celular":"3126672134","categoria":"A","estado":"Pagado","fechaInicio":"2025-03-28","fechaVence":"2028-03-28","diaPago":28,"saldoTotal":10305900,"saldoVencido":0,"cuotaValor":636808,"cuotasPend":16,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"514167625","nombre":"Carlos Romero Vargas","celular":"3171120642","categoria":"A","estado":"Pagado","fechaInicio":"2026-04-23","fechaVence":"2027-04-23","diaPago":23,"saldoTotal":17064271,"saldoVencido":0,"cuotaValor":1949742,"cuotasPend":9,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"146430448","nombre":"José Vega Medina","celular":"3172130789","categoria":"A","estado":"Pagado","fechaInicio":"2025-09-05","fechaVence":"2029-04-28","diaPago":5,"saldoTotal":39977746,"saldoVencido":0,"cuotaValor":1123342,"cuotasPend":36,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"729589790","nombre":"Héctor Rodríguez Ruiz","celular":"3129626108","categoria":"A","estado":"Pagado","fechaInicio":"2023-12-15","fechaVence":"2026-12-15","diaPago":15,"saldoTotal":3100958,"saldoVencido":0,"cuotaValor":563002,"cuotasPend":6,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"1062419699","nombre":"Carmen Torres Aguilar","celular":"3163219824","categoria":"A","estado":"Pagado","fechaInicio":"2025-07-18","fechaVence":"2028-07-18","diaPago":18,"saldoTotal":15642873,"saldoVencido":0,"cuotaValor":849011,"cuotasPend":18,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"1035053308","nombre":"Laura Mendoza Jiménez","celular":"3178935169","categoria":"A","estado":"Pagado","fechaInicio":"2025-11-07","fechaVence":"2027-11-07","diaPago":7,"saldoTotal":14109814,"saldoVencido":0,"cuotaValor":998467,"cuotasPend":14,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"222563114","nombre":"Camila Morales Sánchez","celular":"3138231838","categoria":"A","estado":"Pagado","fechaInicio":"2025-11-07","fechaVence":"2027-05-07","diaPago":7,"saldoTotal":2982854,"saldoVencido":0,"cuotaValor":313525,"cuotasPend":10,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"1022927833","nombre":"Marta Morales Morales","celular":"3112651177","categoria":"A","estado":"Pagado","fechaInicio":"2025-03-15","fechaVence":"2026-09-15","diaPago":15,"saldoTotal":596937,"saldoVencido":0,"cuotaValor":208983,"cuotasPend":3,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"748646787","nombre":"María Cruz Rojas","celular":"3129331682","categoria":"A","estado":"Pagado","fechaInicio":"2025-02-17","fechaVence":"2028-02-17","diaPago":17,"saldoTotal":7901194,"saldoVencido":290663,"cuotaValor":488193,"cuotasPend":16,"sede":"Ibague","entidad":"Coomsertar","obs":"PAGO JUNIO"},{"nit":"983390270","nombre":"Carmen Sánchez Sánchez","celular":"3148077999","categoria":"A","estado":"Pagado","fechaInicio":"2025-08-11","fechaVence":"2028-08-11","diaPago":11,"saldoTotal":14134495,"saldoVencido":0,"cuotaValor":1273517,"cuotasPend":11,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"556455263","nombre":"Rosa Torres Ortiz","celular":"3120235977","categoria":"A","estado":"Pagado","fechaInicio":"2025-10-27","fechaVence":"2029-10-27","diaPago":27,"saldoTotal":26363341,"saldoVencido":0,"cuotaValor":881212,"cuotasPend":30,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"230257394","nombre":"Jorge Muñoz Ruiz","celular":"","categoria":"A","estado":"Pagado","fechaInicio":"2024-04-10","fechaVence":"2027-10-09","diaPago":10,"saldoTotal":35799178,"saldoVencido":0,"cuotaValor":1857324,"cuotasPend":19,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"220280283","nombre":"Clara Álvarez Gómez","celular":"3173790237","categoria":"A","estado":"Cancelado","fechaInicio":"2026-05-06","fechaVence":"2026-08-06","diaPago":6,"saldoTotal":1352940,"saldoVencido":0,"cuotaValor":726472,"cuotasPend":2,"sede":"Ibague","entidad":"Coomsertar","obs":"CANCELA CREDITO"},{"nit":"479018816","nombre":"Sofía Gutiérrez Gutiérrez","celular":"3221983738","categoria":"A","estado":"Pagado","fechaInicio":"2025-10-30","fechaVence":"2029-06-11","diaPago":30,"saldoTotal":83121070,"saldoVencido":0,"cuotaValor":3398795,"cuotasPend":24,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"858424338","nombre":"Rosa Cruz Gómez","celular":"3188633773","categoria":"A","estado":"Pagado","fechaInicio":"2024-05-29","fechaVence":"2028-05-29","diaPago":29,"saldoTotal":4238166,"saldoVencido":0,"cuotaValor":244520,"cuotasPend":17,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"1065118908","nombre":"Luz Morales Vega","celular":"3144185957","categoria":"A","estado":"Pagado","fechaInicio":"2025-04-10","fechaVence":"2027-10-10","diaPago":10,"saldoTotal":3118683,"saldoVencido":0,"cuotaValor":238883,"cuotasPend":13,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"150905381","nombre":"Luz Sánchez Rodríguez","celular":"3201959074","categoria":"A","estado":"Pagado","fechaInicio":"2026-04-15","fechaVence":"2028-04-15","diaPago":15,"saldoTotal":10075029,"saldoVencido":0,"cuotaValor":378641,"cuotasPend":27,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"1099862962","nombre":"María Romero Gutiérrez","celular":"3151954280","categoria":"A","estado":"Cancelado","fechaInicio":"2024-07-12","fechaVence":"2026-07-12","diaPago":12,"saldoTotal":431068,"saldoVencido":212874,"cuotaValor":447300,"cuotasPend":1,"sede":"Ibague","entidad":"Coomsertar","obs":"CANCELA CREDITO"},{"nit":"419056075","nombre":"Miguel Martínez Ruiz","celular":"3122140194","categoria":"A","estado":"Pagado","fechaInicio":"2026-04-15","fechaVence":"2028-04-15","diaPago":15,"saldoTotal":47308440,"saldoVencido":0,"cuotaValor":2822116,"cuotasPend":17,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"887101399","nombre":"Paula Ruiz Ramírez","celular":"3135130808","categoria":"A","estado":"Pagado","fechaInicio":"2026-04-21","fechaVence":"2029-04-21","diaPago":21,"saldoTotal":21538731,"saldoVencido":0,"cuotaValor":947871,"cuotasPend":23,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"196058026","nombre":"Fernando Herrera Rodríguez","celular":"3239770838","categoria":"A","estado":"Pagado","fechaInicio":"2024-06-11","fechaVence":"2027-06-11","diaPago":11,"saldoTotal":2177310,"saldoVencido":0,"cuotaValor":212247,"cuotasPend":10,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"458643292","nombre":"Diego Mendoza Torres","celular":"3205004485","categoria":"A","estado":"Pagado","fechaInicio":"2026-05-27","fechaVence":"2029-05-27","diaPago":27,"saldoTotal":44048142,"saldoVencido":0,"cuotaValor":1626875,"cuotasPend":27,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"664238817","nombre":"Juan Cruz García","celular":"3246304573","categoria":"A","estado":"Pagado","fechaInicio":"2026-03-26","fechaVence":"2028-03-26","diaPago":26,"saldoTotal":13573856,"saldoVencido":0,"cuotaValor":838712,"cuotasPend":16,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"175785153","nombre":"Gloria Moreno Mendoza","celular":"3108688755","categoria":"A","estado":"Cancelado","fechaInicio":"2025-05-28","fechaVence":"2026-11-28","diaPago":28,"saldoTotal":1618367,"saldoVencido":0,"cuotaValor":348395,"cuotasPend":5,"sede":"Ibague","entidad":"Coomsertar","obs":"CANCELA CREDITO"},{"nit":"177326192","nombre":"Diana Romero López","celular":"3169487336","categoria":"A","estado":"Pagado","fechaInicio":"2025-11-20","fechaVence":"2028-11-20","diaPago":20,"saldoTotal":26048560,"saldoVencido":0,"cuotaValor":1273584,"cuotasPend":20,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"769490764","nombre":"Juan García Mendoza","celular":"3125098412","categoria":"A","estado":"Pagado","fechaInicio":"2025-05-20","fechaVence":"2028-02-12","diaPago":20,"saldoTotal":38391780,"saldoVencido":0,"cuotaValor":2377256,"cuotasPend":16,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"960994192","nombre":"Marta Flores Pérez","celular":"3199874152","categoria":"A","estado":"Pagado","fechaInicio":"2025-09-09","fechaVence":"2028-09-09","diaPago":9,"saldoTotal":12394174,"saldoVencido":0,"cuotaValor":636808,"cuotasPend":19,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"662910965","nombre":"Carlos Aguilar Álvarez","celular":"3133253031","categoria":"A","estado":"Pagado","fechaInicio":"2023-09-04","fechaVence":"2026-07-08","diaPago":4,"saldoTotal":2120896,"saldoVencido":0,"cuotaValor":1442716,"cuotasPend":1,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"249858004","nombre":"Juan López Jiménez","celular":"3145569244","categoria":"A","estado":"Pagado","fechaInicio":"2023-06-23","fechaVence":"2028-06-23","diaPago":23,"saldoTotal":26830280,"saldoVencido":0,"cuotaValor":1339523,"cuotasPend":20,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"756329813","nombre":"Luz Herrera Sánchez","celular":"3165428914","categoria":"A","estado":"Pagado","fechaInicio":"2025-06-19","fechaVence":"2028-06-19","diaPago":19,"saldoTotal":9870195,"saldoVencido":0,"cuotaValor":551848,"cuotasPend":18,"sede":"Ibague","entidad":"Coomsertar","obs":"YA PAGO"},{"nit":"129089799","nombre":"Miguel Gutiérrez Torres","celular":"","categoria":"B","estado":"Activo","fechaInicio":"2023-10-10","fechaVence":"2026-04-10","diaPago":10,"saldoTotal":4969856,"saldoVencido":329054,"cuotaValor":348058,"cuotasPend":14,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"114675606","nombre":"Sofía Álvarez Torres","celular":"3106596150","categoria":"C","estado":"Activo","fechaInicio":"2025-06-25","fechaVence":"2029-11-25","diaPago":25,"saldoTotal":21379646,"saldoVencido":837092,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"582544654","nombre":"Julián García Medina","celular":"3158412769","categoria":"C","estado":"Activo","fechaInicio":"2024-10-26","fechaVence":"2026-04-26","diaPago":26,"saldoTotal":203910,"saldoVencido":203910,"cuotaValor":208983,"cuotasPend":1,"sede":"Ibague","entidad":"Coomsertar","obs":"FINALIZA CREDITO"},{"nit":"40765523","nombre":"Clara Vega Morales","celular":"3132262382","categoria":"D","estado":"Activo","fechaInicio":"2024-11-27","fechaVence":"2026-05-27","diaPago":27,"saldoTotal":1013959,"saldoVencido":1013959,"cuotaValor":1102341,"cuotasPend":1,"sede":"Ibague","entidad":"Coomsertar","obs":"FINALIZA CREDITO"},{"nit":"340091645","nombre":"Héctor Vega Jiménez","celular":"3199110661","categoria":"D","estado":"Activo","fechaInicio":"2025-05-29","fechaVence":"2027-05-29","diaPago":29,"saldoTotal":4216782,"saldoVencido":1290969,"cuotaValor":1230190,"cuotasPend":3,"sede":"Ibague","entidad":"Coomsertar","obs":"ENE-FEB-MAR-ABRIL"},{"nit":"942959947","nombre":"Fernando Vargas García","celular":"3141701771","categoria":"E1","estado":"Activo","fechaInicio":"2024-07-12","fechaVence":"2026-07-12","diaPago":12,"saldoTotal":1595900,"saldoVencido":1432253,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"105673587","nombre":"Luz Díaz Jiménez","celular":"3214524499","categoria":"E1","estado":"Activo","fechaInicio":"2024-05-17","fechaVence":"2025-11-17","diaPago":17,"saldoTotal":786290,"saldoVencido":786290,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"240747617","nombre":"Paula Ramírez Aguilar","celular":"3217817881","categoria":"E1","estado":"Activo","fechaInicio":"2024-05-18","fechaVence":"2027-05-18","diaPago":18,"saldoTotal":2844138,"saldoVencido":1228575,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"528389542","nombre":"Diana Rojas García","celular":"3153970445","categoria":"E2","estado":"Activo","fechaInicio":"2022-08-05","fechaVence":"2025-08-05","diaPago":5,"saldoTotal":19293210,"saldoVencido":19293211,"cuotaValor":300000,"cuotasPend":64,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"405174089","nombre":"Héctor Morales Gómez","celular":"3207907400","categoria":"E2","estado":"Activo","fechaInicio":"2023-05-03","fechaVence":"2031-05-03","diaPago":3,"saldoTotal":11181800,"saldoVencido":1645434,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"552935089","nombre":"Camila Aguilar Ruiz","celular":"3183670896","categoria":"E2","estado":"Activo","fechaInicio":"2016-03-18","fechaVence":"2017-03-31","diaPago":18,"saldoTotal":360057,"saldoVencido":360057,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"841502093","nombre":"Camila Vega López","celular":"3226349890","categoria":"E2","estado":"Activo","fechaInicio":"2023-03-01","fechaVence":"2026-03-01","diaPago":1,"saldoTotal":7717284,"saldoVencido":7717284,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"1008493674","nombre":"Carmen Sánchez Álvarez","celular":"3216120253","categoria":"E2","estado":"Activo","fechaInicio":"2023-05-11","fechaVence":"2025-05-11","diaPago":11,"saldoTotal":14536308,"saldoVencido":14536308,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"508757597","nombre":"Álvaro Muñoz Ruiz","celular":"3151842883","categoria":"E2","estado":"Activo","fechaInicio":"2022-09-27","fechaVence":"2025-09-27","diaPago":27,"saldoTotal":13327862,"saldoVencido":13327862,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"169079928","nombre":"Andrés Rivera Torres","celular":"3186891254","categoria":"E2","estado":"Activo","fechaInicio":"2020-09-11","fechaVence":"2023-09-11","diaPago":11,"saldoTotal":2113509,"saldoVencido":2113509,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"731138924","nombre":"Ricardo Castro Cruz","celular":"3130961814","categoria":"E2","estado":"Activo","fechaInicio":"2022-06-09","fechaVence":"2025-06-09","diaPago":9,"saldoTotal":4318359,"saldoVencido":4318359,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"590084674","nombre":"Héctor Torres Pérez","celular":"3112818692","categoria":"E2","estado":"Activo","fechaInicio":"2023-07-18","fechaVence":"2025-07-18","diaPago":18,"saldoTotal":7666875,"saldoVencido":7666874,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"693616911","nombre":"Diana Morales Díaz","celular":"3239580255","categoria":"E2","estado":"Activo","fechaInicio":"2021-07-29","fechaVence":"2024-07-29","diaPago":29,"saldoTotal":5427763,"saldoVencido":5427763,"cuotaValor":234991,"cuotasPend":23,"sede":"Ibague","entidad":"Coomsertar","obs":"CRUCE CON APORTES"},{"nit":"428191062","nombre":"Ana Cruz Jiménez","celular":"3181744682","categoria":"E2","estado":"Activo","fechaInicio":"2023-07-07","fechaVence":"2024-07-07","diaPago":7,"saldoTotal":1856953,"saldoVencido":1856953,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"443129725","nombre":"Óscar Morales Gómez","celular":"3118783450","categoria":"E2","estado":"Activo","fechaInicio":"2022-03-11","fechaVence":"2025-03-11","diaPago":11,"saldoTotal":4414656,"saldoVencido":4414656,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"694128707","nombre":"Paula Mendoza Rivera","celular":"3136038571","categoria":"E2","estado":"Activo","fechaInicio":"2018-02-07","fechaVence":"2020-10-07","diaPago":7,"saldoTotal":4211359,"saldoVencido":4211359,"cuotaValor":200000,"cuotasPend":21,"sede":"Ibague","entidad":"Coomsertar","obs":"NOV/2018"},{"nit":"897017098","nombre":"Miguel Flores Aguilar","celular":"3207751158","categoria":"E2","estado":"Activo","fechaInicio":"2023-11-24","fechaVence":"2026-11-24","diaPago":24,"saldoTotal":3655942,"saldoVencido":2472594,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"293348475","nombre":"Óscar Flores Vargas","celular":"3168053918","categoria":"E2","estado":"Activo","fechaInicio":"2020-10-15","fechaVence":"2022-10-15","diaPago":15,"saldoTotal":1743267,"saldoVencido":1743267,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"393720866","nombre":"Paula Cruz Aguilar","celular":"3180785617","categoria":"E2","estado":"Activo","fechaInicio":"2023-05-02","fechaVence":"2025-05-02","diaPago":2,"saldoTotal":4524618,"saldoVencido":4524618,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"20871749","nombre":"Andrés Vargas Álvarez","celular":"3195813613","categoria":"E2","estado":"Activo","fechaInicio":"2022-07-11","fechaVence":"2024-07-11","diaPago":11,"saldoTotal":3461387,"saldoVencido":3461387,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"712024957","nombre":"Pedro Morales Muñoz","celular":"3248411939","categoria":"E2","estado":"Activo","fechaInicio":"2020-12-23","fechaVence":"2025-12-23","diaPago":23,"saldoTotal":11806261,"saldoVencido":11806261,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"1036159585","nombre":"Jorge Aguilar Sánchez","celular":"3152422633","categoria":"E2","estado":"Activo","fechaInicio":"2017-01-26","fechaVence":"2019-01-26","diaPago":26,"saldoTotal":1572507,"saldoVencido":1572507,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"739811309","nombre":"Luz Castro Aguilar","celular":"","categoria":"E2","estado":"Activo","fechaInicio":"2022-11-04","fechaVence":"2025-11-04","diaPago":4,"saldoTotal":7716123,"saldoVencido":7716123,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"686620722","nombre":"Julián Ramírez Aguilar","celular":"3153453534","categoria":"E2","estado":"Activo","fechaInicio":"2019-10-03","fechaVence":"2021-10-03","diaPago":3,"saldoTotal":1187291,"saldoVencido":1187291,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"545795353","nombre":"Luis Gómez Rodríguez","celular":"3119549679","categoria":"E2","estado":"Activo","fechaInicio":"2019-09-09","fechaVence":"2021-09-09","diaPago":9,"saldoTotal":1743267,"saldoVencido":1743267,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"437546486","nombre":"Jorge Morales Jiménez","celular":"3229294272","categoria":"E2","estado":"Activo","fechaInicio":"2016-10-10","fechaVence":"2017-07-10","diaPago":10,"saldoTotal":577471,"saldoVencido":577471,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"31907395","nombre":"Andrés Ramírez García","celular":"3138132769","categoria":"E2","estado":"Activo","fechaInicio":"2023-03-17","fechaVence":"2024-09-17","diaPago":17,"saldoTotal":2221326,"saldoVencido":2221326,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"1017613291","nombre":"Carmen Pérez Muñoz","celular":"3115180853","categoria":"E2","estado":"Activo","fechaInicio":"2022-04-19","fechaVence":"2025-04-19","diaPago":19,"saldoTotal":4731630,"saldoVencido":4731630,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"1000244319","nombre":"Gloria Ruiz López","celular":"3148795419","categoria":"E2","estado":"Activo","fechaInicio":"2021-12-23","fechaVence":"2026-12-23","diaPago":23,"saldoTotal":31449458,"saldoVencido":25212214,"cuotaValor":200000,"cuotasPend":157,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"701392169","nombre":"Paula Castro Vargas","celular":"3249468772","categoria":"E2","estado":"Activo","fechaInicio":"2019-12-30","fechaVence":"2022-12-31","diaPago":30,"saldoTotal":4862352,"saldoVencido":4862352,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"977592179","nombre":"Sofía Álvarez Mendoza","celular":"3227419448","categoria":"E2","estado":"Activo","fechaInicio":"2019-12-30","fechaVence":"2022-06-30","diaPago":30,"saldoTotal":3368884,"saldoVencido":3368884,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"550943288","nombre":"Jorge Torres Moreno","celular":"3189745959","categoria":"E2","estado":"Activo","fechaInicio":"2019-03-08","fechaVence":"2020-09-08","diaPago":8,"saldoTotal":1455268,"saldoVencido":1455268,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"609693527","nombre":"Elena Medina Ramírez","celular":"3242299954","categoria":"E2","estado":"Activo","fechaInicio":"2015-10-28","fechaVence":"2017-04-28","diaPago":28,"saldoTotal":1746491,"saldoVencido":1746491,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"603503756","nombre":"Óscar Flores Ramírez","celular":"3244996008","categoria":"E2","estado":"Activo","fechaInicio":"2022-06-08","fechaVence":"2026-06-08","diaPago":8,"saldoTotal":10786574,"saldoVencido":10786573,"cuotaValor":842708,"cuotasPend":13,"sede":"Ibague","entidad":"Coomsertar","obs":"DICIEMBRE/2024"},{"nit":"516630252","nombre":"José García García","celular":"3223563646","categoria":"E2","estado":"Activo","fechaInicio":"2022-05-20","fechaVence":"2026-05-20","diaPago":20,"saldoTotal":16802572,"saldoVencido":16802571,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"910922026","nombre":"Óscar Sánchez Martínez","celular":"3245656069","categoria":"E2","estado":"Activo","fechaInicio":"2022-06-24","fechaVence":"2025-12-24","diaPago":24,"saldoTotal":10535530,"saldoVencido":10535530,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"464173470","nombre":"Jorge Morales Rodríguez","celular":"3204549384","categoria":"E2","estado":"Activo","fechaInicio":"2016-09-09","fechaVence":"2018-09-09","diaPago":9,"saldoTotal":1368724,"saldoVencido":1368724,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"61944547","nombre":"Héctor Moreno Romero","celular":"3254535701","categoria":"E2","estado":"Activo","fechaInicio":"2023-05-10","fechaVence":"2026-05-10","diaPago":10,"saldoTotal":4208263,"saldoVencido":4208262,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"775396286","nombre":"Andrés Gutiérrez Gómez","celular":"3197542890","categoria":"E2","estado":"Activo","fechaInicio":"2022-11-21","fechaVence":"2025-05-21","diaPago":21,"saldoTotal":1618383,"saldoVencido":1618383,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"919841350","nombre":"Natalia Jiménez Álvarez","celular":"3179191131","categoria":"E2","estado":"Activo","fechaInicio":"2019-10-11","fechaVence":"2021-10-11","diaPago":11,"saldoTotal":1732701,"saldoVencido":1732701,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"1062908255","nombre":"Carmen Torres Morales","celular":"","categoria":"E2","estado":"Activo","fechaInicio":"2022-09-13","fechaVence":"2025-09-13","diaPago":13,"saldoTotal":14194884,"saldoVencido":14194884,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"888263439","nombre":"Diego Aguilar Aguilar","celular":"3158841505","categoria":"E2","estado":"Activo","fechaInicio":"2023-08-18","fechaVence":"2025-08-18","diaPago":18,"saldoTotal":4566284,"saldoVencido":4566284,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"77910012","nombre":"Gloria García Herrera","celular":"3258885007","categoria":"E2","estado":"Activo","fechaInicio":"2023-01-01","fechaVence":"2025-01-01","diaPago":1,"saldoTotal":24076108,"saldoVencido":24076108,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"200275792","nombre":"Fernando Aguilar Gómez","celular":"3136426552","categoria":"E2","estado":"Activo","fechaInicio":"2022-02-03","fechaVence":"2024-02-03","diaPago":3,"saldoTotal":2287851,"saldoVencido":2287851,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"127985429","nombre":"Natalia Ortiz Pérez","celular":"3187360307","categoria":"E2","estado":"Activo","fechaInicio":"2022-09-12","fechaVence":"2025-09-12","diaPago":12,"saldoTotal":3379958,"saldoVencido":3379958,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"721896028","nombre":"Diego Sánchez Ortiz","celular":"3207360682","categoria":"E2","estado":"Activo","fechaInicio":"2024-03-19","fechaVence":"2026-03-19","diaPago":19,"saldoTotal":8716340,"saldoVencido":8716340,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"925303576","nombre":"Juan Moreno Álvarez","celular":"3121986536","categoria":"E2","estado":"Activo","fechaInicio":"2022-04-29","fechaVence":"2025-04-29","diaPago":29,"saldoTotal":4210483,"saldoVencido":4210483,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"131852976","nombre":"Elena Gómez Rojas","celular":"3214761823","categoria":"E2","estado":"Activo","fechaInicio":"2019-03-08","fechaVence":"2020-09-08","diaPago":8,"saldoTotal":2940000,"saldoVencido":2940000,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"106453688","nombre":"Ricardo Martínez Moreno","celular":"3105148725","categoria":"E2","estado":"Activo","fechaInicio":"2019-04-08","fechaVence":"2021-04-08","diaPago":8,"saldoTotal":1595900,"saldoVencido":1595900,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"347238597","nombre":"Pedro Álvarez Gómez","celular":"3173117636","categoria":"E2","estado":"Activo","fechaInicio":"2020-10-16","fechaVence":"2023-10-16","diaPago":16,"saldoTotal":5511911,"saldoVencido":5511911,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"488075293","nombre":"Elena Aguilar López","celular":"3245299055","categoria":"E2","estado":"Activo","fechaInicio":"2022-04-08","fechaVence":"2024-04-08","diaPago":8,"saldoTotal":1384555,"saldoVencido":1384555,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"265957461","nombre":"Julián Díaz Pérez","celular":"3143960548","categoria":"E2","estado":"Activo","fechaInicio":"2022-12-02","fechaVence":"2025-05-09","diaPago":2,"saldoTotal":32054247,"saldoVencido":32054247,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"75143985","nombre":"Luz López Romero","celular":"3197296605","categoria":"E2","estado":"Activo","fechaInicio":"2020-09-03","fechaVence":"2022-09-03","diaPago":3,"saldoTotal":4358169,"saldoVencido":4358169,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"183201187","nombre":"Andrés Vega Sánchez","celular":"3172709620","categoria":"E2","estado":"Activo","fechaInicio":"2022-08-03","fechaVence":"2024-08-03","diaPago":3,"saldoTotal":2015272,"saldoVencido":2015272,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"279963764","nombre":"Óscar Moreno Flores","celular":"3116825112","categoria":"E2","estado":"Activo","fechaInicio":"2022-07-11","fechaVence":"2023-07-11","diaPago":11,"saldoTotal":1182751,"saldoVencido":1182751,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"815794911","nombre":"Clara Morales Aguilar","celular":"","categoria":"E2","estado":"Activo","fechaInicio":"2018-10-29","fechaVence":"2020-10-29","diaPago":29,"saldoTotal":1477344,"saldoVencido":1477344,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"922069278","nombre":"Ricardo Rivera Gómez","celular":"3252770648","categoria":"E2","estado":"Activo","fechaInicio":"2023-07-21","fechaVence":"2025-01-21","diaPago":21,"saldoTotal":1988567,"saldoVencido":1988567,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"1007282730","nombre":"Sofía Díaz Medina","celular":"3148306261","categoria":"E2","estado":"Activo","fechaInicio":"2022-03-28","fechaVence":"2023-03-28","diaPago":28,"saldoTotal":1232620,"saldoVencido":1232620,"cuotaValor":100000,"cuotasPend":12,"sede":"Ibague","entidad":"Coomsertar","obs":""},{"nit":"599997523","nombre":"Rosa Rojas Castro","celular":"3244464689","categoria":"E2","estado":"Activo","fechaInicio":"2021-09-16","fechaVence":"2026-09-16","diaPago":16,"saldoTotal":5226509,"saldoVencido":4569656,"cuotaValor":197926,"cuotasPend":26,"sede":"Ibague","entidad":"Coomsertar","obs":"DICIEMBRE/2023"},{"nit":"955389095","nombre":"Julián Gutiérrez Ortiz","celular":"3259041194","categoria":"E2","estado":"Activo","fechaInicio":"2022-04-06","fechaVence":"2023-10-06","diaPago":6,"saldoTotal":2295598,"saldoVencido":2295598,"cuotaValor":0,"cuotasPend":0,"sede":"Ibague","entidad":"Coomsertar","obs":""}];
+
+// Datos de demostración para Coopfisol (anonimizados; el volumen agregado — 6 personas,
+// saldo cercano a $27.1M — refleja el corte de julio ya analizado, pero el detalle por
+// persona es sintético para esta demo, a la espera de la carga real vía Excel).
+const SEED_COOPFISOL = [{"nit":"123694312","nombre":"Nelson Quintero Contreras","celular":"3129990608","categoria":"A","estado":"Activo","fechaInicio":"2025-02-12","fechaVence":"2027-01-17","diaPago":7,"saldoTotal":8200000,"saldoVencido":0,"cuotaValor":630769,"cuotasPend":13,"sede":"Ibague","entidad":"Coopfisol","obs":""},{"nit":"536819858","nombre":"Édgar Contreras Contreras","celular":"3128122250","categoria":"A","estado":"Activo","fechaInicio":"2025-01-27","fechaVence":"2027-02-08","diaPago":21,"saldoTotal":5100000,"saldoVencido":0,"cuotaValor":637500,"cuotasPend":8,"sede":"Ibague","entidad":"Coopfisol","obs":""},{"nit":"494769608","nombre":"Iván Franco Contreras","celular":"3113234302","categoria":"A","estado":"Activo","fechaInicio":"2025-05-14","fechaVence":"2027-03-18","diaPago":4,"saldoTotal":4600000,"saldoVencido":0,"cuotaValor":575000,"cuotasPend":8,"sede":"Girardot","entidad":"Coopfisol","obs":""},{"nit":"423449954","nombre":"Consuelo Quintero Beltrán","celular":"3212634613","categoria":"A","estado":"Activo","fechaInicio":"2025-09-23","fechaVence":"2027-02-19","diaPago":2,"saldoTotal":3900000,"saldoVencido":0,"cuotaValor":325000,"cuotasPend":12,"sede":"Ibague","entidad":"Coopfisol","obs":""},{"nit":"694625911","nombre":"Wilson Zapata Contreras","celular":"3248603172","categoria":"A","estado":"Activo","fechaInicio":"2025-06-10","fechaVence":"2027-04-26","diaPago":6,"saldoTotal":3212571,"saldoVencido":0,"cuotaValor":229469,"cuotasPend":14,"sede":"Ibague","entidad":"Coopfisol","obs":""},{"nit":"1083254275","nombre":"Édgar Franco Peña","celular":"3208530188","categoria":"A","estado":"Activo","fechaInicio":"2025-05-20","fechaVence":"2027-02-04","diaPago":17,"saldoTotal":2100000,"saldoVencido":0,"cuotaValor":175000,"cuotasPend":12,"sede":"Girardot","entidad":"Coopfisol","obs":""}];
+
+// ═══════════════════════════════════════════════════════════
+// USUARIOS Y ROLES (6 personas con acceso al portal)
+// ═══════════════════════════════════════════════════════════
+const USERS = [
+  {id:"u1", nombre:"Lucía Moreno Beltrán", cargo:"Dirección Administrativa", rol:"superadmin",
+   rolLabel:"Superadministradora", init:"LM", color:"#8E44AD"},
+  {id:"u2", nombre:"Lucía Moreno Beltrán", cargo:"Dirección Administrativa", rol:"superusuario",
+   rolLabel:"Superusuario (control total)", init:"LM", color:"#6C3483"},
+  {id:"u3", nombre:"Celso Villarreal Pacheco", cargo:"Director Ejecutivo GEM", rol:"superadmin",
+   rolLabel:"Superadministrador · Gerente General", init:"CV", color:"#B7950B"},
+  {id:"u4", nombre:"Melida Barajas García", cargo:"Área de Cartera y Créditos", rol:"cartera",
+   rolLabel:"Usuario Cartera", init:"MB", color:"#1E8E5A"},
+  {id:"u5", nombre:"Yeimy Carolina Pineda", cargo:"Dirección Comercial", rol:"comercial",
+   rolLabel:"Directora Ejecutiva Comercial", init:"YP", color:"#C6971D"},
+  {id:"u6", nombre:"Magnolia Aranzales Pérez", cargo:"Dirección Comercial", rol:"comercial",
+   rolLabel:"Directora Comercial GEM", init:"MA", color:"#C6971D"},
+];
+function getUser(id){ return USERS.find(u=>u.id===id) || null; }
+function currentUser(){ return getUser(STATE.currentUserId); }
+</script>
+<script>
+// ═══════════════════════════════════════════════════════════
+// ESTADO GLOBAL
+// ═══════════════════════════════════════════════════════════
+const STORE_KEY = "gem_cartera_mvp_v1";
+let STATE = {
+  creditos: [],       // cartera actual
+  gestiones: [],      // bitácora
+  promesas: [],       // compromisos
+  pagos: [],          // pagos registrados
+  importaciones: [],  // lotes
+  vistas: [],         // vistas guardadas
+  lastUpdate: null,
+  plantillas: defaultPlantillas(),
+  festivos: [],       // AAAA-MM-DD
+  contadorInformes: {}, // por empresa, numeración electrónica del informe diario
+  prospectos: [],     // pipeline comercial
+  contadorRecibos: {}, // por empresa, numeración de recibos
+  recibos: [],        // historial de recibos generados
+};
+let CURRENT = "dashboard";
+
+function defaultPlantillas(){
+  return {
+    r3:"Hola *{nombre}* 👋\n\nLe recordamos de forma cordial que su cuota vence en *3 días* ⏳\n\n📅 Fecha de vencimiento: *{vence}*\n💰 Valor a pagar: *{cuota}*\n\nCon gusto le ayudamos a gestionarlo antes de esa fecha. 🙌\n\n_{empresa}_",
+    r2:"Hola *{nombre}* 👋\n\nSu cuota vence en *2 días* ⏳\n\n📅 Fecha: *{vence}*\n💰 Valor: *{cuota}*\n\nQuedamos atentos para ayudarle con su pago. ✅\n\n_{empresa}_",
+    r1:"Hola *{nombre}* 👋\n\n⚠️ *Mañana* vence su cuota:\n\n📅 Fecha: *{vence}*\n💰 Valor: *{cuota}*\n\nLe agradecemos su pago puntual. 🙏\n\n_{empresa}_",
+    hoy:"Hola *{nombre}* 👋\n\n🔴 *Hoy* vence su cuota:\n\n💰 Valor: *{cuota}*\n\nPuede acercarse a nuestras oficinas o escribirnos por este medio para gestionarlo. 📲\n\n_{empresa}_",
+    vencida:"Hola *{nombre}* 👋\n\n🔴 Su cuota se encuentra *vencida*:\n\n💰 Valor: *{cuota}*\n📅 Vencía: *{vence}*\n\nPor favor comuníquese con nosotros lo antes posible para ponerse al día y evitar mayores intereses de mora. 🙏\n\n_{empresa}_",
+    promesa:"Hola *{nombre}* 👋\n\n✅ Confirmamos su *compromiso de pago*:\n\n💰 Valor: *{cuota}*\n📅 Fecha acordada: *{vence}*\n\n¡Gracias por su gestión y cumplimiento! 🙌\n\n_{empresa}_",
+    comprobante:"Hola *{nombre}* 👋\n\n📎 ¿Nos puede compartir el *comprobante* de su último pago?\n\nEsto nos ayuda a mantener su historial al día. Gracias por su colaboración. 🙏\n\n_{empresa}_",
+  };
+}
+function nombreEmpresa(entidad){
+  if(entidad==="Coopfisol") return "Cooperativa Multiactiva Finanzas Solidarias COOPFISOL – GEM";
+  return "Cooperativa Multiactiva Coomsertar – GEM";
+}
+
+// ═══════════════════════════════════════════════════════════
+// PERSISTENCIA
+// ═══════════════════════════════════════════════════════════
+function save(){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(STATE)); }catch(e){}
+}
+function load(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(raw){ STATE = Object.assign(STATE, JSON.parse(raw)); return true; }
+  }catch(e){}
+  return false;
+}
+
+// ═══════════════════════════════════════════════════════════
+// UTILIDADES
+// ═══════════════════════════════════════════════════════════
+const fmt = n => (n==null||isNaN(n)) ? "—" : "$"+Math.round(n).toLocaleString("es-CO");
+const fmtN = n => (n==null||isNaN(n)) ? "0" : Math.round(n).toLocaleString("es-CO");
+const uid = () => "id"+Date.now()+Math.random().toString(36).slice(2,7);
+const hoy = () => new Date();
+const iso = d => d.toISOString().slice(0,10);
+function fechaBonita(s){ if(!s)return"—"; const d=new Date(s+"T00:00"); if(isNaN(d))return s;
+  return d.toLocaleDateString("es-CO",{day:"numeric",month:"short",year:"numeric"}); }
+
+function esFestivo(d){ return STATE.festivos.includes(iso(d)); }
+function esHabil(d){ const w=d.getDay(); return w!==0 && w!==6 && !esFestivo(d); }
+// días hábiles hasta la fecha de corte (día de pago del mes)
+function diasHabilesHasta(diaPago){
+  if(!diaPago) return null;
+  const h=hoy(); h.setHours(0,0,0,0);
+  const y=h.getFullYear(), m=h.getMonth();
+  let corte=new Date(y,m,diaPago); corte.setHours(0,0,0,0);
+  if(corte<h) corte=new Date(y,m+1,diaPago);
+  let dias=0; const cur=new Date(h);
+  while(cur<corte){ cur.setDate(cur.getDate()+1); if(esHabil(cur))dias++; }
+  return dias;
+}
+
+// semáforo según días hábiles y estado de mora
+function semaforo(c){
+  const dv = c.saldoVencido>0;
+  const dh = diasHabilesHasta(c.diaPago);
+  if(c.estado!=="Activo") return null;
+  if(dv) return {k:"vencido",txt:"Vencida",dias:c.diasMora||"+",bg:"var(--vino)",fg:"#fff",dot:"#fff"};
+  if(dh===0) return {k:"hoy",txt:"Vence hoy",dias:0,bg:"var(--red-dark)",fg:"#fff",dot:"#fff"};
+  if(dh===1) return {k:"1",txt:"1 día",dias:1,bg:"var(--red-bg)",fg:"var(--red)",dot:"var(--red)"};
+  if(dh===2) return {k:"2",txt:"2 días",dias:2,bg:"var(--orange-bg)",fg:"var(--orange)",dot:"var(--orange)"};
+  if(dh===3) return {k:"3",txt:"3 días",dias:3,bg:"var(--yellow-bg)",fg:"var(--yellow)",dot:"var(--yellow)"};
+  return null;
+}
+
+// puntaje de prioridad
+function prioridad(c){
+  let p=0;
+  p += Math.min(c.diasMora||0,360)/360*35;
+  p += Math.min((c.saldoVencido||0)/3000000,1)*25;
+  const catW={A:0,B:5,C:12,D:20,E1:28,E2:30}; p += catW[c.categoria]||0;
+  const promInc = STATE.promesas.filter(pr=>pr.creditoId===c.id && pr.estado==="Incumplida").length;
+  p += Math.min(promInc*8,16);
+  const ultG = ultimaGestion(c.id);
+  if(ultG){ const dd=(hoy()-new Date(ultG.fecha))/(864e5); p+=Math.min(dd/30,1)*10; }
+  else p+=10;
+  if(p>=70)return{n:p,lbl:"Crítica",bg:"var(--red-bg)",fg:"var(--red)"};
+  if(p>=45)return{n:p,lbl:"Alta",bg:"var(--orange-bg)",fg:"var(--orange)"};
+  if(p>=22)return{n:p,lbl:"Media",bg:"var(--yellow-bg)",fg:"var(--yellow)"};
+  return{n:p,lbl:"Baja",bg:"var(--green-bg)",fg:"var(--green)"};
+}
+
+function ultimaGestion(cid){
+  const gs=STATE.gestiones.filter(g=>g.creditoId===cid).sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
+  return gs[0]||null;
+}
+
+const CAT_STY={A:{bg:"var(--green-bg)",fg:"var(--green)"},B:{bg:"var(--blue-bg)",fg:"var(--blue)"},
+  C:{bg:"var(--yellow-bg)",fg:"var(--yellow)"},D:{bg:"var(--orange-bg)",fg:"var(--orange)"},
+  E1:{bg:"var(--red-bg)",fg:"var(--red)"},E2:{bg:"#F3E8F5",fg:"#7D3C98"}};
+const EST_STY={Activo:{bg:"var(--blue-bg)",fg:"var(--blue)"},Pagado:{bg:"var(--green-bg)",fg:"var(--green)"},
+  Cancelado:{bg:"#EEF0F2",fg:"var(--gray)"},Finalizado:{bg:"var(--green-bg)",fg:"#0F7B6C"},
+  Refinanciado:{bg:"var(--orange-bg)",fg:"var(--orange)"},Castigado:{bg:"var(--red-bg)",fg:"var(--red)"}};
+
+function catChip(c){const s=CAT_STY[c]||CAT_STY.A;return `<span class="chip" style="background:${s.bg};color:${s.fg}">${c}</span>`;}
+function estChip(e,c){
+  // Si el credito esta Activo pero en categoria de riesgo alto (E1/E2) con saldo vencido, mostrar "Retrasado" en rojo
+  if(c && c.estado==="Activo" && (c.categoria==="E1"||c.categoria==="E2") && c.saldoVencido>0){
+    return `<span class="chip" style="background:var(--red-bg);color:var(--red)">⚠ Retrasado</span>`;
+  }
+  const s=EST_STY[e]||EST_STY.Activo;return `<span class="chip" style="background:${s.bg};color:${s.fg}">${e}</span>`;
+}
+
+function waLink(c){
+  if(!c.celular||c.celular.length!==10)return null;
+  const p1=(c.nombre||"").split(" ")[0];
+  const s=semaforo(c);
+  let tplKey="r3";
+  if(s){
+    if(s.k==="vencido") tplKey="vencida";
+    else if(s.k==="hoy") tplKey="hoy";
+    else if(s.k==="1") tplKey="r1";
+    else if(s.k==="2") tplKey="r2";
+    else if(s.k==="3") tplKey="r3";
+  }
+  let msg=STATE.plantillas[tplKey]
+    .replace("{nombre}",p1)
+    .replace("{cuota}",fmt(c.cuotaValor))
+    .replace("{vence}",fechaBonita(c.fechaVence))
+    .replace("{empresa}",nombreEmpresa(c.entidad));
+  return `https://wa.me/57${c.celular}?text=${encodeURIComponent(msg)}`;
+}
+
+function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");
+  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),2200);}
+
+// ═══════════════════════════════════════════════════════════
+// LOGIN + BOOT
+// ═══════════════════════════════════════════════════════════
+function renderUserPicker(){
+  document.getElementById("userPicker").innerHTML = USERS.map(u=>`
+    <div class="user-card" onclick="doLogin('${u.id}')">
+      <div class="av2" style="background:${u.color}">${u.init}</div>
+      <div style="flex:1">
+        <div class="un">${u.nombre}</div>
+        <div class="ur">${u.rolLabel}</div>
+        <div class="uc">${u.cargo}</div>
+      </div>
+    </div>`).join("");
+}
+function doLogin(userId){
+  STATE.currentUserId = userId;
+  save();
+  document.getElementById("login").style.display="none";
+  document.getElementById("app").style.display="block";
+  buildNav(); buildMobileBar(); buildEmpresaBar(); updateUserChip();
+  render();
+}
+function logout(){
+  toggleSidebar(false);
+  document.getElementById("app").style.display="none";
+  document.getElementById("login").style.display="flex";
+}
+function updateUserChip(){
+  const u=currentUser(); if(!u)return;
+  const av=document.querySelector(".topbar .user .av");
+  const nm=document.querySelector(".topbar .user .nm");
+  const rl=document.querySelector(".topbar .user .rl");
+  if(av){av.textContent=u.init; av.style.background=u.color;}
+  if(nm)nm.textContent=u.nombre;
+  if(rl)rl.textContent=u.rolLabel;
+}
+function boot(){
+  document.getElementById("loginLogo").src=LOGO_SRC;
+  document.getElementById("sbLogo").src=LOGO_SRC;
+  renderUserPicker();
+  const had=load();
+  if(!had || !STATE.creditos.length){
+    // primera vez: sembrar con datos anonimizados de julio (Coomsertar) + demo Coopfisol
+    STATE.creditos = [
+      ...SEED.map((r,i)=>seedToCredito(r,"a"+i)),
+      ...SEED_COOPFISOL.map((r,i)=>seedToCredito(r,"b"+i)),
+    ];
+    STATE.lastUpdate = new Date().toISOString();
+    STATE.importaciones=[
+      {id:uid(),fecha:new Date().toISOString(),archivo:"Carga inicial Coomsertar (julio, anonimizada)",
+       entidad:"Coomsertar",periodo:"2026-07",registros:SEED.length,usuario:"Sistema"},
+      {id:uid(),fecha:new Date().toISOString(),archivo:"Carga inicial Coopfisol (demo)",
+       entidad:"Coopfisol",periodo:"2026-07",registros:SEED_COOPFISOL.length,usuario:"Sistema"},
+    ];
+    save();
+  }
+  if(!STATE.empresaActiva) STATE.empresaActiva="Coomsertar";
+  if(STATE.currentUserId && getUser(STATE.currentUserId)){
+    document.getElementById("login").style.display="none";
+    document.getElementById("app").style.display="block";
+    buildNav(); buildMobileBar(); buildEmpresaBar(); updateUserChip();
+    render();
+  }
+}
+
+function seedToCredito(r,i){
+  const dias = r.saldoVencido>0 ? Math.round(r.saldoVencido/(r.cuotaValor||1)*30) : 0;
+  return {
+    id:"c"+i, numeroExterno:"", clienteDoc:r.nit, nombre:r.nombre, celular:r.celular,
+    entidad:r.entidad||"Coomsertar", sede:r.sede||"Ibague", responsable:"Sin asignar",
+    categoria:r.categoria||"A", estado:r.estado||"Activo",
+    fechaInicio:r.fechaInicio||"", fechaVence:r.fechaVence||"", diaPago:r.diaPago||null,
+    saldoTotal:r.saldoTotal||0, saldoSinVencer:(r.saldoTotal||0)-(r.saldoVencido||0),
+    saldoVencido:r.saldoVencido||0, cuotaValor:r.cuotaValor||0,
+    cuotasPend:r.cuotasPend||0, diasMora:dias, obs:r.obs||"", etiquetas:[],
+  };
+}
+
+// ═══════════════════════════════════════════════════════════
+// EMPRESA ACTIVA (Coomsertar / Coopfisol / Ambas)
+// ═══════════════════════════════════════════════════════════
+function buildEmpresaBar(){
+  const bar=document.getElementById("empresaBar");
+  const u=currentUser();
+  if(!u || u.rol==="comercial"){ bar.style.display="none"; return; }
+  bar.style.display="flex";
+  const opts=["Coomsertar","Coopfisol","Ambas"];
+  bar.innerHTML = `<span style="font-size:11.5px;color:var(--gray);font-weight:600;margin-right:4px">Empresa:</span>` +
+    opts.map(o=>`<button class="empresa-btn ${STATE.empresaActiva===o?'active':''}" onclick="setEmpresa('${o}')">${o}</button>`).join("");
+}
+function setEmpresa(e){ STATE.empresaActiva=e; save(); buildEmpresaBar(); render(); }
+function visibleCreditos(){
+  if(STATE.empresaActiva==="Ambas") return STATE.creditos;
+  return STATE.creditos.filter(c=>c.entidad===STATE.empresaActiva);
+}
+
+// ═══════════════════════════════════════════════════════════
+// NAVEGACIÓN
+// ═══════════════════════════════════════════════════════════
+const NAV=[
+  {g:"Operación diaria"},
+  {k:"dashboard",ic:"📊",t:"Dashboard", roles:["superadmin","superusuario","cartera"]},
+  {k:"hoy",ic:"📌",t:"Mi trabajo de hoy", roles:["superadmin","superusuario","cartera"]},
+  {k:"cobros",ic:"🎯",t:"Gestión de cobros", roles:["superadmin","superusuario","cartera"]},
+  {g:"Información"},
+  {k:"cartera",ic:"📁",t:"Cartera general", roles:["superadmin","superusuario","cartera"]},
+  {k:"clientes",ic:"👤",t:"Clientes y créditos", roles:["superadmin","superusuario","cartera"]},
+  {k:"pagos",ic:"💵",t:"Pagos", roles:["superadmin","superusuario","cartera"]},
+  {k:"promesas",ic:"🤝",t:"Promesas de pago", roles:["superadmin","superusuario","cartera"]},
+  {g:"Comercial"},
+  {k:"pipeline",ic:"📈",t:"Pipeline comercial", roles:["superadmin","superusuario","comercial"]},
+  {g:"Datos y administración"},
+  {k:"importar",ic:"📥",t:"Importar Excel", roles:["superadmin","superusuario","cartera"]},
+  {k:"calidad",ic:"✔️",t:"Calidad de datos", roles:["superadmin","superusuario","cartera"]},
+  {k:"informes",ic:"📄",t:"Informes", roles:["superadmin","superusuario","cartera"]},
+  {k:"recibos",ic:"🧾",t:"Recibos", roles:["superadmin","superusuario","cartera"]},
+  {k:"config",ic:"⚙️",t:"Plantillas rápidas", roles:["superadmin","superusuario","cartera"]},
+];
+function navAllowed(item){
+  const u=currentUser(); if(!u) return false;
+  if(!item.roles) return true;
+  return item.roles.includes(u.rol);
+}
+function navBadge(k){
+  if(k==="hoy"||k==="cobros") return cobrosUrgentes().length||"";
+  if(k==="promesas") return STATE.promesas.filter(p=>p.estado==="Incumplida").length||"";
+  return "";
+}
+function buildNav(){
+  let h="";
+  let lastWasGroup=false;
+  NAV.forEach(it=>{
+    if(it.g){ h+=`<div class="sb-group" data-g="1">${it.g}</div>`; lastWasGroup=true; return; }
+    if(!navAllowed(it)) return;
+    lastWasGroup=false;
+    const b=navBadge(it.k);
+    h+=`<div class="sb-item ${CURRENT===it.k?'active':''}" onclick="go('${it.k}')">
+      <span class="ic">${it.ic}</span><span>${it.t}</span>${b?`<span class="badge">${b}</span>`:''}</div>`;
+  });
+  document.getElementById("navMenu").innerHTML=h;
+  updateLastUpdate();
+  // ajustar CURRENT si la pagina actual no es visible para este rol
+  const u=currentUser();
+  if(u){
+    const item=NAV.find(n=>n.k===CURRENT);
+    if(item && !navAllowed(item)){
+      const primero=NAV.find(n=>!n.g && navAllowed(n));
+      if(primero) CURRENT=primero.k;
+    }
+  }
+}
+function buildMobileBar(){
+  const u=currentUser();
+  let items;
+  if(u && u.rol==="comercial"){
+    items=[["pipeline","📈","Pipeline"]];
+  } else {
+    items=[["dashboard","📊","Inicio"],["hoy","📌","Hoy"],["cobros","🎯","Cobros"],["cartera","📁","Cartera"],["importar","📥","Importar"]];
+  }
+  document.getElementById("mobileBar").innerHTML=items.map(([k,i,t])=>
+    `<button class="${CURRENT===k?'active':''}" onclick="go('${k}')"><span class="ic">${i}</span>${t}</button>`).join("");
+}
+function updateLastUpdate(){
+  const el=document.getElementById("lastUpdate");
+  if(STATE.lastUpdate){const d=new Date(STATE.lastUpdate);
+    el.innerHTML=`Última actualización:<br><b style="color:#c9d3de">${d.toLocaleDateString("es-CO")} ${d.toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"})}</b>`;}
+}
+function go(k){CURRENT=k;buildNav();buildMobileBar();render();toggleSidebar(false);window.scrollTo(0,0);}
+function toggleSidebar(open){
+  const sb=document.getElementById("sidebar"),ov=document.getElementById("sbOverlay");
+  if(open){sb.classList.add("open");ov.classList.add("show");}
+  else{sb.classList.remove("open");ov.classList.remove("show");}
+}
+
+function cobrosUrgentes(){
+  return visibleCreditos().map(c=>({c,s:semaforo(c)})).filter(x=>x.s).map(x=>x.c);
+}
+</script>
+<script>
+// ═══════════════════════════════════════════════════════════
+// ROUTER DE RENDER
+// ═══════════════════════════════════════════════════════════
+function render(){
+  const R={dashboard:renderDashboard,hoy:renderHoy,cobros:renderCobros,cartera:renderCartera,
+    clientes:renderClientes,pagos:renderPagos,promesas:renderPromesas,importar:renderImportar,
+    calidad:renderCalidad,informes:renderInformes,pipeline:renderPipeline,recibos:renderRecibos,config:renderConfig};
+  document.getElementById("content").innerHTML=(R[CURRENT]||renderDashboard)();
+}
+function head(t,d,action){
+  return `<div class="page-head"><div class="row"><div><h2>${t}</h2><p>${d}</p></div>${action||""}</div></div>`;
+}
+
+// ─────────── DASHBOARD ───────────
+function metaSplit(cuotaValor){
+  const interes=Math.round((cuotaValor||0)*0.2);
+  return {interes, capital:(cuotaValor||0)-interes};
+}
+function pagosDelMes(creditoIds){
+  const ym=iso(hoy()).slice(0,7);
+  return STATE.pagos.filter(p=>creditoIds.includes(p.creditoId)&&p.fecha.slice(0,7)===ym);
+}
+function renderDashboard(){
+  const cs=visibleCreditos();
+  const activos=cs.filter(c=>c.estado==="Activo");
+  const saldoTotal=cs.reduce((s,c)=>s+c.saldoTotal,0);
+  const vencido=cs.reduce((s,c)=>s+c.saldoVencido,0);
+  const sinVencer=cs.reduce((s,c)=>s+c.saldoSinVencer,0);
+  const urg=cobrosUrgentes();
+  const promPend=STATE.promesas.filter(p=>p.estado==="Pendiente").length;
+  const promInc=STATE.promesas.filter(p=>p.estado==="Incumplida").length;
+  const sinContactar=activos.filter(c=>!ultimaGestion(c.id)).length;
+
+  // Meta y recaudo del mes (general)
+  const idsAll=cs.map(c=>c.id);
+  const pagosMes=pagosDelMes(idsAll);
+  const metaInteresGen=cs.reduce((s,c)=>s+metaSplit(c.cuotaValor).interes,0);
+  const metaCapitalGen=cs.reduce((s,c)=>s+metaSplit(c.cuotaValor).capital,0);
+  const recCapitalGen=pagosMes.reduce((s,p)=>s+(p.capital||0)+(p.anticipado||0),0);
+  const recInteresGen=pagosMes.reduce((s,p)=>s+(p.interes||0)+(p.mora||0),0);
+  const metaTotalGen=metaInteresGen+metaCapitalGen;
+  const recTotalGen=recCapitalGen+recInteresGen;
+  const cumplGen=metaTotalGen?Math.round(recTotalGen/metaTotalGen*100):0;
+
+  // por categoria: saldo, personas, meta/recaudo, cumplimiento
+  const cats=["A","B","C","D","E1","E2"];
+  const porCat={};
+  cats.forEach(cat=>{
+    const sub=cs.filter(c=>c.categoria===cat);
+    const ids=sub.map(c=>c.id);
+    const pm=pagosDelMes(ids);
+    const metaInt=sub.reduce((s,c)=>s+metaSplit(c.cuotaValor).interes,0);
+    const metaCap=sub.reduce((s,c)=>s+metaSplit(c.cuotaValor).capital,0);
+    const recCap=pm.reduce((s,p)=>s+(p.capital||0)+(p.anticipado||0),0);
+    const recInt=pm.reduce((s,p)=>s+(p.interes||0)+(p.mora||0),0);
+    const metaT=metaInt+metaCap, recT=recCap+recInt;
+    porCat[cat]={n:sub.length, saldo:sub.reduce((s,c)=>s+c.saldoTotal,0), metaT, recT,
+      cumpl: metaT? Math.round(recT/metaT*100) : 0};
+  });
+  const maxCatSaldo=Math.max(...cats.map(c=>porCat[c].saldo),1);
+
+  return head("Dashboard · "+STATE.empresaActiva, "Visión ejecutiva de la cartera al corte actual.",
+    `<button class="btn btn-primary" onclick="generarInformeDiario()">📄 Generar informe diario</button>`)+
+
+  // ── Fila 1: Cartera general y Cartera al día, GRANDES ──
+  `<div style="display:grid;grid-template-columns:1.3fr 1fr;gap:14px" class="dash-cols">
+    <div class="panel" style="background:linear-gradient(135deg,var(--navy),var(--navy2));border:none">
+      <div style="color:#9fb3c8;font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Cartera general</div>
+      <div style="color:#fff;font-size:34px;font-weight:800;margin-top:4px;letter-spacing:-1px">${fmt(saldoTotal)}</div>
+      <div style="color:#c3cdd8;font-size:13px;margin-top:2px">${cs.length} créditos · ${activos.length} activos</div>
+      <div style="display:flex;gap:18px;margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.15)">
+        <div><div style="color:#9fb3c8;font-size:11px">Cumplimiento del mes</div><div style="color:${cumplGen>=90?'#6fd39a':cumplGen>=60?'#F4A623':'#f28b82'};font-size:22px;font-weight:800">${cumplGen}%</div></div>
+        <div><div style="color:#9fb3c8;font-size:11px">Meta capital</div><div style="color:#fff;font-size:15px;font-weight:700">${fmt(metaCapitalGen)}</div></div>
+        <div><div style="color:#9fb3c8;font-size:11px">Meta interés</div><div style="color:#fff;font-size:15px;font-weight:700">${fmt(metaInteresGen)}</div></div>
+        <div><div style="color:#9fb3c8;font-size:11px">Recaudado</div><div style="color:#6fd39a;font-size:15px;font-weight:700">${fmt(recTotalGen)}</div></div>
+      </div>
+    </div>
+    <div class="panel" style="background:var(--green-bg);border:none">
+      <div style="color:var(--green);font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Cartera al día</div>
+      <div style="color:var(--green);font-size:34px;font-weight:800;margin-top:4px;letter-spacing:-1px">${fmt(sinVencer)}</div>
+      <div style="color:#4a8a6a;font-size:13px;margin-top:2px">${pct(sinVencer,saldoTotal)} del total de cartera</div>
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(30,142,90,.2)">
+        <div style="color:var(--red);font-size:12px;font-weight:700">🔴 Cartera vencida: ${fmt(vencido)} (${pct(vencido,saldoTotal)})</div>
+      </div>
+    </div>
+  </div>
+  <div class="kpi-grid" style="margin-top:14px">
+    ${kpiC("Cobros urgentes (≤3 días)",urg.length,"Ver Mi trabajo de hoy","orange")}
+    ${kpiC("Promesas pendientes",promPend,promInc+" incumplidas","")}
+    ${kpiC("Clientes sin contactar",sinContactar,"","blue")}
+    ${kpiC("Créditos con mora",cs.filter(c=>c.saldoVencido>0&&c.estado==="Activo").length,"","red")}
+  </div>
+
+  <div class="panel" style="margin-top:14px">
+    <div class="panel-title">Categorías de riesgo — saldo, personas y cumplimiento</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px">
+      ${cats.map(cat=>{const v=porCat[cat];const s=CAT_STY[cat];
+        return `<div style="background:${s.bg};border-radius:12px;padding:14px;border:1.5px solid ${s.fg}30">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:22px;font-weight:900;color:${s.fg}">${cat}</span>
+            <span style="font-size:11.5px;color:${s.fg};font-weight:700;background:#fff;padding:2px 9px;border-radius:20px">${v.n} pers.</span>
+          </div>
+          <div style="font-size:19px;font-weight:800;color:var(--navy);margin-top:8px">${fmt(v.saldo)}</div>
+          <div style="height:7px;background:rgba(0,0,0,.08);border-radius:5px;overflow:hidden;margin-top:8px">
+            <div style="height:100%;width:${Math.min(v.cumpl,100)}%;background:${s.fg};border-radius:5px"></div>
+          </div>
+          <div style="font-size:12px;color:var(--gray);margin-top:5px;font-weight:600">Cumplimiento: <b style="color:${s.fg}">${v.cumpl}%</b></div>
+        </div>`;}).join("")}
+    </div>
+  </div>
+
+  ${renderResultadosPorSede(cs)}
+
+  <div class="panel">
+    <div class="panel-title" style="margin-bottom:10px">Antigüedad de cartera</div>
+    ${antiguedadBars(cs)}
+  </div>`;
+}
+function kpiC(lbl,val,sub,cls){return `<div class="kpi ${cls}"><div class="lbl">${lbl}</div><div class="val">${val}</div>${sub?`<div class="sub">${sub}</div>`:''}</div>`;}
+function pct(a,b){return b?(a/b*100).toFixed(1)+"%":"0%";}
+// ─────────── RESULTADOS POR SEDE (4 ciudades, formato tipo informe) ───────────
+function filaCategoriaSede(sub){
+  // sub = creditos de esa sede+categoria
+  const ids=sub.map(c=>c.id);
+  const pm=pagosDelMes(ids);
+  const saldoCapital=sub.reduce((s,c)=>s+c.saldoTotal,0);
+  const metaCap=sub.reduce((s,c)=>s+metaSplit(c.cuotaValor).capital,0);
+  const metaInt=sub.reduce((s,c)=>s+metaSplit(c.cuotaValor).interes,0);
+  const recCap=pm.reduce((s,p)=>s+(p.capital||0)+(p.anticipado||0),0);
+  const recInt=pm.reduce((s,p)=>s+(p.interes||0)+(p.mora||0),0);
+  const metaT=metaCap+metaInt, recT=recCap+recInt;
+  return {n:sub.length, saldoCapital, metaCap, metaInt, metaT, recCap, recInt, recT,
+    cumpl: metaT? Math.round(recT/metaT*100) : 0, dif: metaT-recT};
+}
+function tablaInformeSede(nombreSede, cs){
+  const grupos=[["A","A"],["B","B"],["C","C"],["D","D"],["E","E1/E2 (incobrabilidad)"]];
+  let rows="";
+  let totRow={n:0,saldoCapital:0,metaCap:0,metaInt:0,metaT:0,recCap:0,recInt:0,recT:0};
+  grupos.forEach(([key,label])=>{
+    const sub = key==="E" ? cs.filter(c=>c.categoria==="E1"||c.categoria==="E2") : cs.filter(c=>c.categoria===key);
+    if(!sub.length && key!=="A") return; // omitir categorias vacias salvo A
+    const f=filaCategoriaSede(sub);
+    totRow.n+=f.n;totRow.saldoCapital+=f.saldoCapital;totRow.metaCap+=f.metaCap;totRow.metaInt+=f.metaInt;
+    totRow.metaT+=f.metaT;totRow.recCap+=f.recCap;totRow.recInt+=f.recInt;totRow.recT+=f.recT;
+    const cumplColor = f.cumpl>=90?"var(--green)":f.cumpl>=60?"var(--orange)":"var(--red)";
+    rows+=`<tr><td><b>${label}</b></td><td>${fmt(f.saldoCapital)}</td><td>${f.n}</td>
+      <td>${fmt(f.metaCap)}</td><td>${fmt(f.metaInt)}</td><td><b>${fmt(f.metaT)}</b></td>
+      <td>${fmt(f.recCap)}</td><td>${fmt(f.recInt)}</td><td><b>${fmt(f.recT)}</b></td>
+      <td style="color:${cumplColor};font-weight:700">${f.cumpl}%</td><td>${fmt(f.dif)}</td></tr>`;
+  });
+  const cumplTot = totRow.metaT? Math.round(totRow.recT/totRow.metaT*100):0;
+  rows+=`<tr style="background:var(--yellow-bg);font-weight:800"><td>TOTAL</td><td>${fmt(totRow.saldoCapital)}</td><td>${totRow.n}</td>
+    <td>${fmt(totRow.metaCap)}</td><td>${fmt(totRow.metaInt)}</td><td>${fmt(totRow.metaT)}</td>
+    <td>${fmt(totRow.recCap)}</td><td>${fmt(totRow.recInt)}</td><td>${fmt(totRow.recT)}</td>
+    <td>${cumplTot}%</td><td>${fmt(totRow.metaT-totRow.recT)}</td></tr>`;
+  return `<div style="margin-bottom:18px">
+    <div style="font-weight:800;color:var(--navy);font-size:14.5px;margin-bottom:8px">📍 ${nombreSede}</div>
+    <div class="tbl-wrap"><table class="tbl"><thead><tr>
+      <th>Categ.</th><th>Saldo capital</th><th>N° pers.</th><th>Meta capital</th><th>Meta interés</th>
+      <th>Total meta</th><th>Recaudo capital</th><th>Recaudo interés</th><th>Total recaudo</th><th>Cumpl.</th><th>Diferencia</th>
+    </tr></thead><tbody>${rows}</tbody></table></div></div>`;
+}
+function renderResultadosPorSede(cs){
+  const sedesOrden=["Ibague","Girardot","Rovira","Neiva"];
+  let html=`<div class="panel" id="panelSedes">
+    <div class="panel-title">Resultados por sede
+      <button class="btn btn-ghost btn-sm" onclick="imprimirResultadosSede()">🖨️ Generar PDF</button>
+    </div>
+    <div id="resultadosSedeContenido">`;
+  sedesOrden.forEach(sede=>{
+    const sub=cs.filter(c=>c.sede===sede);
+    html+=tablaInformeSede(sede.charAt(0).toUpperCase()+sede.slice(1),sub);
+  });
+  html+=`<div style="border-top:2px solid var(--gold);padding-top:14px;margin-top:6px">
+    <div style="font-weight:800;color:var(--navy);font-size:15px;margin-bottom:8px">📊 Informe general (todas las sedes)</div>
+    ${tablaInformeSede("Consolidado "+STATE.empresaActiva, cs)}
+  </div>`;
+  html+=`</div></div>`;
+  return html;
+}
+function imprimirResultadosSede(){
+  const contenido=document.getElementById("resultadosSedeContenido").innerHTML;
+  const w=window.open("","_blank");
+  w.document.write(`<html><head><title>Resultados por sede — ${STATE.empresaActiva}</title>
+    <style>
+      body{font-family:Segoe UI,Arial,sans-serif;padding:24px;color:#1A1A2E}
+      table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:6px}
+      th{background:#0D1B2A;color:#fff;padding:6px 8px;text-align:left}
+      td{padding:5px 8px;border-bottom:1px solid #eee}
+      h1{color:#0D1B2A;font-size:18px}
+    </style></head><body>
+    <h1>Resultados por sede — ${STATE.empresaActiva} — ${fechaBonita(iso(hoy()))}</h1>
+    ${contenido}
+    </body></html>`);
+  w.document.close();
+  setTimeout(()=>{w.print();},400);
+}
+
+// ─────────── INFORME DIARIO (imagen con logo GEM y numeración) ───────────
+function generarInformeDiario(){
+  if(typeof html2canvas==="undefined"){
+    toast("No se pudo cargar el generador de imágenes (revisa tu conexión a internet y vuelve a intentar)");
+    return;
+  }
+  const empresa=STATE.empresaActiva;
+  const cs = empresa==="Ambas" ? STATE.creditos : STATE.creditos.filter(c=>c.entidad===empresa);
+  const idsHoy = cs.map(c=>c.id);
+  const hoyStr = iso(hoy());
+  const pagosHoy = STATE.pagos.filter(p=>idsHoy.includes(p.creditoId) && p.fecha.slice(0,10)===hoyStr);
+
+  // numeracion electronica
+  const key = empresa==="Ambas" ? "GEM" : (empresa==="Coopfisol" ? "COOP" : "COOM");
+  if(!STATE.contadorInformes[key]) STATE.contadorInformes[key]=0;
+  STATE.contadorInformes[key]++;
+  const numero = `${key}-${hoyStr.replace(/-/g,"")}-${String(STATE.contadorInformes[key]).padStart(4,"0")}`;
+  save();
+
+  const cats=["A","B","C","D","E1","E2"];
+  const porCat={};
+  cats.forEach(cat=>{
+    const ids=cs.filter(c=>c.categoria===cat).map(c=>c.id);
+    const pc=pagosHoy.filter(p=>ids.includes(p.creditoId));
+    porCat[cat]={interes:pc.reduce((s,p)=>s+(p.interes||0),0), capital:pc.reduce((s,p)=>s+(p.capital||0),0)};
+  });
+  const totalInteres=cats.reduce((s,c)=>s+porCat[c].interes,0);
+  const totalCapital=cats.reduce((s,c)=>s+porCat[c].capital,0);
+  const totalMora=pagosHoy.reduce((s,p)=>s+(p.mora||0),0);
+  const totalAnticipado=pagosHoy.reduce((s,p)=>s+(p.anticipado||0),0);
+  const subtotal=totalInteres+totalCapital;
+  const granTotal=subtotal+totalMora+totalAnticipado;
+
+  const filaCat = (cat)=>{
+    const v=porCat[cat];
+    const pctI = totalInteres? Math.round(v.interes/totalInteres*100):0;
+    const pctC = totalCapital? Math.round(v.capital/totalCapital*100):0;
+    if(v.interes===0 && v.capital===0) return "";
+    return `<tr><td style="padding:6px 10px;border-bottom:1px solid #eee"><b>${cat}</b></td>
+      <td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right">${fmt(v.interes)} <span style="color:#999;font-size:10px">(${pctI}%)</span></td>
+      <td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:right">${fmt(v.capital)} <span style="color:#999;font-size:10px">(${pctC}%)</span></td></tr>`;
+  };
+
+  const html = `
+  <div id="informeDiarioTmp" style="width:640px;background:#fff;font-family:Segoe UI,Arial,sans-serif;padding:0">
+    <div style="background:#0D1B2A;padding:20px 26px;display:flex;align-items:center;gap:14px">
+      <img src="${LOGO_SRC}" style="width:52px;height:52px;border-radius:8px;object-fit:cover">
+      <div>
+        <div style="color:#fff;font-weight:800;font-size:17px">Grupo Empresarial Marcal — GEM</div>
+        <div style="color:#9fb3c8;font-size:12px">Informe diario de recaudo · ${empresa}</div>
+      </div>
+    </div>
+    <div style="padding:22px 26px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:16px;font-size:12px;color:#666">
+        <span>N° de informe: <b style="color:#0D1B2A">${numero}</b></span>
+        <span>Fecha: <b style="color:#0D1B2A">${fechaBonita(hoyStr)}</b></span>
+      </div>
+      <div style="font-weight:800;color:#0D1B2A;font-size:14px;margin-bottom:8px">Ingresos por categoría</div>
+      <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:16px">
+        <thead><tr style="background:#F5F7FA">
+          <th style="padding:7px 10px;text-align:left">Categoría</th>
+          <th style="padding:7px 10px;text-align:right">Interés</th>
+          <th style="padding:7px 10px;text-align:right">Capital</th>
+        </tr></thead>
+        <tbody>${cats.map(filaCat).join("")}</tbody>
+      </table>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <tr><td style="padding:7px 10px;color:#444">Intereses + Capital</td><td style="padding:7px 10px;text-align:right;font-weight:700">${fmt(subtotal)}</td></tr>
+        <tr><td style="padding:7px 10px;color:#444">Interés de mora</td><td style="padding:7px 10px;text-align:right;font-weight:700;color:#C0392B">${fmt(totalMora)}</td></tr>
+        <tr><td style="padding:7px 10px;color:#444">Valor anticipado</td><td style="padding:7px 10px;text-align:right;font-weight:700;color:#2E6BB0">${fmt(totalAnticipado)}</td></tr>
+        <tr style="background:#FEF6E4"><td style="padding:9px 10px;font-weight:800;color:#0D1B2A">TOTAL RECAUDADO HOY</td><td style="padding:9px 10px;text-align:right;font-weight:800;color:#0D1B2A;font-size:15px">${fmt(granTotal)}</td></tr>
+      </table>
+      <div style="margin-top:16px;font-size:10.5px;color:#999">Generado automáticamente desde el sistema de gestión de cartera GEM.</div>
+    </div>
+  </div>`;
+
+  const tmp=document.createElement("div");
+  tmp.style.position="fixed"; tmp.style.left="-9999px";
+  tmp.innerHTML=html;
+  document.body.appendChild(tmp);
+  toast("Generando informe...");
+  html2canvas(document.getElementById("informeDiarioTmp"),{scale:2}).then(canvas=>{
+    const a=document.createElement("a");
+    a.href=canvas.toDataURL("image/png");
+    a.download=`Informe_Diario_${numero}.png`;
+    a.click();
+    document.body.removeChild(tmp);
+    toast("Informe diario descargado");
+  }).catch(()=>{
+    document.body.removeChild(tmp);
+    toast("No se pudo generar la imagen (revisa tu conexión a internet)");
+  });
+}
+
+function antiguedadBars(cs){
+  const bandas={"Al día":0,"1-30":0,"31-90":0,"91-180":0,"181-360":0,"+361":0};
+  cs.forEach(c=>{ if(c.saldoVencido<=0){bandas["Al día"]+=c.saldoTotal;return;}
+    const d=c.diasMora||0;
+    if(d<=30)bandas["1-30"]+=c.saldoVencido; else if(d<=90)bandas["31-90"]+=c.saldoVencido;
+    else if(d<=180)bandas["91-180"]+=c.saldoVencido; else if(d<=360)bandas["181-360"]+=c.saldoVencido;
+    else bandas["+361"]+=c.saldoVencido; });
+  const mx=Math.max(...Object.values(bandas),1);
+  const col={"Al día":"var(--green)","1-30":"var(--yellow)","31-90":"var(--orange)","91-180":"var(--red)","181-360":"var(--red-dark)","+361":"var(--vino)"};
+  return Object.entries(bandas).map(([k,v])=>`<div style="margin-bottom:8px">
+    <div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:3px">
+      <span style="color:var(--gray)">${k}</span><b style="color:var(--navy)">${fmt(v)}</b></div>
+    <div style="height:7px;background:var(--line);border-radius:5px;overflow:hidden">
+      <div style="height:100%;width:${v/mx*100}%;background:${col[k]};border-radius:5px"></div></div></div>`).join("");
+}
+
+// ─────────── MI TRABAJO DE HOY ───────────
+function renderHoy(){
+  const urg=visibleCreditos().map(c=>({c,s:semaforo(c),p:prioridad(c)})).filter(x=>x.s)
+    .sort((a,b)=>{const ord={vencido:0,hoy:1,"1":2,"2":3,"3":4};
+      if(ord[a.s.k]!==ord[b.s.k])return ord[a.s.k]-ord[b.s.k];
+      return b.c.saldoVencido-a.c.saldoVencido||b.p.n-a.p.n;});
+  const promHoy=STATE.promesas.filter(p=>p.estado==="Pendiente"&&p.fechaPrometida===iso(hoy()));
+  const promInc=STATE.promesas.filter(p=>p.estado==="Incumplida");
+  const d=hoy().toLocaleDateString("es-CO",{weekday:"long",day:"numeric",month:"long"});
+
+  let h=head("Mi trabajo de hoy",`Hoy es ${d}. Esto es lo que debe gestionar, en orden de urgencia.`);
+
+  if(promInc.length){
+    h+=`<div class="panel" style="border-left:4px solid var(--red)">
+      <div class="panel-title" style="color:var(--red)">⚠ ${promInc.length} promesa(s) incumplida(s)</div>
+      ${promInc.slice(0,5).map(p=>{const c=STATE.creditos.find(x=>x.id===p.creditoId);
+        return c?rowMini(c,"Prometió "+fmt(p.valor)+" el "+fechaBonita(p.fechaPrometida)):"";}).join("")}</div>`;
+  }
+  if(!urg.length && !promHoy.length){
+    h+=`<div class="empty card" style="padding:50px"><div class="ic">✓</div>
+      <h3>No hay cobros urgentes para hoy</h3>
+      <p>Aquí aparecen los créditos activos cuyo pago vence en 3 días hábiles o menos, y las promesas del día.</p></div>`;
+    return h;
+  }
+  h+=`<div style="margin-bottom:6px;font-size:13px;color:var(--gray)"><b style="color:var(--navy)">${urg.length}</b> cobro(s) por gestionar</div>`;
+  urg.forEach(({c,s,p})=>{h+=cobroCard(c,s,p);});
+  return h;
+}
+function rowMini(c,extra){
+  return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f2eee2">
+    <div><b style="color:var(--navy);font-size:13px">${c.nombre}</b><div style="font-size:11px;color:var(--gray)">${extra||''}</div></div>
+    <div style="display:flex;gap:6px">${waBtn(c)}<button class="btn btn-ghost btn-sm" onclick="openCliente('${c.id}')">Ver</button></div></div>`;
+}
+function cobroCard(c,s,p){
+  const catBg=(CAT_STY[c.categoria]||CAT_STY.A).bg;
+  return `<div class="card" style="padding:15px;margin-bottom:11px;border-left:5px solid ${s.dot==='#fff'?s.bg:s.dot};background:${catBg}">
+    <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center">
+      <div style="display:flex;align-items:center;gap:11px;min-width:0">
+        <span class="semaforo" style="background:${s.bg};color:${s.fg}"><span class="dot" style="background:${s.dot}"></span>${s.txt}</span>
+        <div style="min-width:0">
+          <div style="font-weight:700;color:var(--navy);font-size:16px">${c.nombre}</div>
+          <div style="font-size:12.5px;color:var(--gray)">CC ${c.clienteDoc} · ${c.sede} · Paga día ${c.diaPago||"?"} ${catChip(c.categoria)}</div>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:12px;color:var(--gray);font-weight:600">Valor de la cuota</div>
+        <div style="font-weight:800;color:var(--navy);font-size:19px">${fmt(c.cuotaValor)}</div>
+        <span class="chip" style="background:${p.bg};color:${p.fg};font-size:11.5px">Prioridad ${p.lbl}</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:7px;margin-top:11px;flex-wrap:wrap">
+      ${waBtn(c)}
+      <button class="btn btn-ghost btn-sm" onclick="openGestion('${c.id}')">Registrar gestión</button>
+      <button class="btn btn-ghost btn-sm" onclick="openPromesa('${c.id}')">Crear promesa</button>
+      <button class="btn btn-ghost btn-sm" onclick="openPago('${c.id}')">Registrar pago</button>
+      <button class="btn btn-ghost btn-sm" onclick="openCliente('${c.id}')">Ver cliente</button>
+    </div></div>`;
+}
+function waBtn(c){
+  const l=waLink(c);
+  if(!l)return `<span class="btn btn-sm" style="background:#eee;color:var(--gray);cursor:not-allowed">Sin celular</span>`;
+  return `<a class="btn btn-wa btn-sm" href="${l}" target="_blank" onclick="logWa('${c.id}')">💬 WhatsApp</a>`;
+}
+function logWa(cid){
+  const c=STATE.creditos.find(x=>x.id===cid);if(!c)return;
+  STATE.gestiones.push({id:uid(),creditoId:cid,fecha:new Date().toISOString(),canal:"WhatsApp",
+    resultado:"Contactado",obs:"Mensaje de WhatsApp abierto",responsable:"Oscar Huertas"});
+  save();toast("Gestión de WhatsApp registrada");
+}
+
+// ─────────── GESTIÓN DE COBROS ───────────
+function renderCobros(){
+  const arr=visibleCreditos().map(c=>({c,s:semaforo(c),p:prioridad(c)}))
+    .filter(x=>x.c.estado==="Activo")
+    .sort((a,b)=>b.p.n-a.p.n);
+  let h=head("Gestión de cobros","Bandeja priorizada por puntaje de riesgo. El color indica urgencia; el orden, prioridad de gestión.",
+    `<button class="btn btn-primary" onclick="go('hoy')">Ver cobros de hoy</button>`);
+  h+=`<div class="panel" style="padding:0">
+    <div class="tbl-wrap"><table class="tbl"><thead><tr>
+    <th>Prioridad</th><th>Urgencia</th><th>Cliente</th><th>Categoría</th><th>Saldo vencido</th><th>Días mora</th><th>Cuota</th><th>Acciones</th>
+    </tr></thead><tbody>`;
+  arr.forEach(({c,s,p})=>{
+    h+=`<tr>
+      <td><span class="chip" style="background:${p.bg};color:${p.fg}">${p.lbl}</span></td>
+      <td>${s?`<span class="semaforo" style="background:${s.bg};color:${s.fg}"><span class="dot" style="background:${s.dot}"></span>${s.txt}</span>`:'<span style="color:var(--gray-l)">—</span>'}</td>
+      <td><b style="color:var(--navy)">${c.nombre}</b><br><span style="font-size:11px;color:var(--gray)">CC ${c.clienteDoc}</span></td>
+      <td>${catChip(c.categoria)}</td>
+      <td style="color:${c.saldoVencido>0?'var(--red)':'var(--gray)'};font-weight:600">${fmt(c.saldoVencido)}</td>
+      <td>${c.diasMora||0}</td>
+      <td>${fmt(c.cuotaValor)}</td>
+      <td style="display:flex;gap:5px">${waBtn(c)}<button class="btn btn-ghost btn-sm" onclick="openCliente('${c.id}')">Ver</button></td>
+    </tr>`;});
+  h+=`</tbody></table></div></div>`;
+  return h;
+}
+</script>
+<script>
+// ─────────── CARTERA GENERAL ───────────
+let carteraFiltros={busca:"",cat:"Todas",estado:"Todos",sede:"Todas",vista:null};
+function renderCartera(){
+  let cs=filtraCartera();
+  const vistas=STATE.vistas.map(v=>`<option value="${v.id}">${v.nombre}</option>`).join("");
+  const periodos=[...new Set(STATE.importaciones.map(i=>i.periodo))];
+  let h=head("📁 Cartera general",`${cs.length} créditos. Busca, filtra, ordena y abre el detalle de cada uno.`,
+    `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <select class="inp" id="exp_periodo" style="font-size:12.5px">
+        <option value="todo">Exportar: toda la información</option>
+        ${periodos.map(p=>`<option value="${p}">Exportar solo periodo ${p}</option>`).join("")}
+      </select>
+      <button class="btn btn-primary" onclick="exportCartera()">⭳ Exportar Excel</button>
+    </div>`);
+  h+=`<div class="panel">
+    <div class="toolbar">
+      <input class="inp" style="flex:1;min-width:200px" placeholder="Buscar nombre, documento, celular…" value="${carteraFiltros.busca}" oninput="carteraFiltros.busca=this.value;refreshCartera()">
+      <select class="inp" onchange="carteraFiltros.cat=this.value;refreshCartera()">${optSel(["Todas","A","B","C","D","E1","E2"],carteraFiltros.cat)}</select>
+      <select class="inp" onchange="carteraFiltros.estado=this.value;refreshCartera()">${optSel(["Todos","Activo","Pagado","Cancelado","Finalizado","Refinanciado","Castigado"],carteraFiltros.estado)}</select>
+      <select class="inp" onchange="carteraFiltros.sede=this.value;refreshCartera()">${optSel(["Todas","Ibague","Girardot","Rovira","Neiva"],carteraFiltros.sede)}</select>
+      <button class="btn btn-ghost btn-sm" onclick="limpiarFiltros()">Limpiar</button>
+      <button class="btn btn-ghost btn-sm" onclick="guardarVista()">★ Guardar vista</button>
+      ${STATE.vistas.length?`<select class="inp" onchange="aplicarVista(this.value)"><option value="">Vistas guardadas…</option>${vistas}</select>`:''}
+    </div>
+    <div id="carteraTable">${carteraTable(cs)}</div>
+  </div>`;
+  return h;
+}
+function carteraTable(cs){
+  if(!cs.length)return `<div class="empty"><div class="ic">🔍</div><h3>Sin resultados</h3><p>Ajusta los filtros o la búsqueda.</p></div>`;
+  let h=`<div class="tbl-wrap"><table class="tbl"><thead><tr>
+    <th>Cliente</th><th>Entidad</th><th>Sede</th><th>Categoría</th><th>Estado</th>
+    <th>Saldo total</th><th>Saldo vencido</th><th>Días mora</th><th>Cuota</th><th>Vence</th><th></th>
+    </tr></thead><tbody>`;
+  cs.slice(0,300).forEach(c=>{
+    h+=`<tr>
+      <td style="cursor:pointer" onclick="openCliente('${c.id}')"><b style="color:var(--navy)">${c.nombre}</b><br><span style="font-size:11px;color:var(--gray)">CC ${c.clienteDoc} · ${c.celular||"sin cel"}</span></td>
+      <td>${c.entidad}</td><td>${c.sede}</td><td>${catChip(c.categoria)}</td><td>${estChip(c.estado,c)}</td>
+      <td style="font-weight:600">${fmt(c.saldoTotal)}</td>
+      <td style="color:${c.saldoVencido>0?'var(--red)':'var(--gray-l)'}">${fmt(c.saldoVencido)}</td>
+      <td>${c.diasMora||0}</td><td>${fmt(c.cuotaValor)}</td><td style="font-size:11.5px">${fechaBonita(c.fechaVence)}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="openCliente('${c.id}')">Detalle</button></td>
+    </tr>`;});
+  h+=`</tbody></table></div>`;
+  if(cs.length>300)h+=`<div style="padding:10px;text-align:center;color:var(--gray);font-size:12px">Mostrando 300 de ${cs.length}. Usa filtros para acotar.</div>`;
+  return h;
+}
+function filtraCartera(){
+  let cs=visibleCreditos().slice();
+  const f=carteraFiltros;
+  if(f.busca.trim()){const q=f.busca.toLowerCase();
+    cs=cs.filter(c=>c.nombre.toLowerCase().includes(q)||(c.clienteDoc||"").includes(q)||(c.celular||"").includes(q));}
+  if(f.cat!=="Todas")cs=cs.filter(c=>c.categoria===f.cat);
+  if(f.estado!=="Todos")cs=cs.filter(c=>c.estado===f.estado);
+  if(f.sede!=="Todas")cs=cs.filter(c=>c.sede===f.sede);
+  return cs;
+}
+function refreshCartera(){document.getElementById("carteraTable").innerHTML=carteraTable(filtraCartera());}
+function limpiarFiltros(){carteraFiltros={busca:"",cat:"Todas",estado:"Todos",sede:"Todas",vista:null};render();}
+function optSel(arr,sel){return arr.map(o=>`<option ${o===sel?'selected':''}>${o}</option>`).join("");}
+function guardarVista(){
+  const n=prompt("Nombre de la vista (ej. 'Vencidos de Ibagué'):");if(!n)return;
+  STATE.vistas.push({id:uid(),nombre:n,filtros:{...carteraFiltros}});save();toast("Vista guardada");render();
+}
+function aplicarVista(id){const v=STATE.vistas.find(x=>x.id===id);if(v){carteraFiltros={...v.filtros};render();}}
+async function exportCartera(){
+  if(typeof ExcelJS==="undefined"){toast("No se pudo cargar el generador de Excel (revisa tu conexión a internet)");return;}
+  const periodoSel=document.getElementById("exp_periodo")?document.getElementById("exp_periodo").value:"todo";
+  const cs=filtraCartera();
+  const CAT_HEX={A:"C8E6D0",B:"CFE0F2",C:"FBEFC0",D:"FBDCB8",E1:"F5C6C0",E2:"E3CFEF"};
+
+  const wb=new ExcelJS.Workbook();
+  wb.creator="GEM — Grupo Empresarial Marcal"; wb.created=new Date();
+  const ws=wb.addWorksheet("Cartera "+STATE.empresaActiva,{views:[{state:"frozen",ySplit:5}]});
+
+  // Logo institucional
+  try{
+    const imgId=wb.addImage({base64:LOGO_SRC,extension:"jpeg"});
+    ws.addImage(imgId,{tl:{col:0,row:0},ext:{width:60,height:60}});
+  }catch(e){}
+
+  ws.mergeCells("C1:F2");
+  ws.getCell("C1").value="GRUPO EMPRESARIAL MARCAL — GEM";
+  ws.getCell("C1").font={bold:true,size:16,color:{argb:"FF0D1B2A"}};
+  ws.mergeCells("C3:F3");
+  ws.getCell("C3").value=`Cartera general — ${STATE.empresaActiva} — ${periodoSel==="todo"?"Toda la información":"Periodo "+periodoSel} — Generado ${new Date().toLocaleString("es-CO")}`;
+  ws.getCell("C3").font={italic:true,size:10,color:{argb:"FF666666"}};
+  ws.getRow(1).height=20; ws.getRow(2).height=20;
+
+  const headers=["Entidad","Sede","Documento","Nombre","Celular","Categoría","Estado",
+    "Saldo total","Saldo vencido","Capital del periodo","Interés del periodo","Mora del periodo","Anticipado del periodo",
+    "Días mora","Cuota","Fecha vence","Observación"];
+  const headerRow=ws.getRow(5);
+  headers.forEach((h,i)=>{
+    const cell=headerRow.getCell(i+1);
+    cell.value=h;
+    cell.font={bold:true,color:{argb:"FFFFFFFF"},size:10};
+    cell.fill={type:"pattern",pattern:"solid",fgColor:{argb:"FF0D1B2A"}};
+    cell.alignment={vertical:"middle",horizontal:"center",wrapText:true};
+  });
+  headerRow.height=30;
+
+  cs.forEach((c,i)=>{
+    const pagosPeriodo = periodoSel==="todo"
+      ? STATE.pagos.filter(p=>p.creditoId===c.id)
+      : STATE.pagos.filter(p=>p.creditoId===c.id && p.fecha.slice(0,7)===periodoSel);
+    const cap=pagosPeriodo.reduce((s,p)=>s+(p.capital||0),0);
+    const inte=pagosPeriodo.reduce((s,p)=>s+(p.interes||0),0);
+    const mora=pagosPeriodo.reduce((s,p)=>s+(p.mora||0),0);
+    const anti=pagosPeriodo.reduce((s,p)=>s+(p.anticipado||0),0);
+    const row=ws.addRow([c.entidad,c.sede,c.clienteDoc,c.nombre,c.celular||"",c.categoria,c.estado,
+      c.saldoTotal,c.saldoVencido,cap,inte,mora,anti,c.diasMora||0,c.cuotaValor,
+      c.fechaVence||"",c.obs||""]);
+    const fillColor=CAT_HEX[c.categoria]||"FFFFFF";
+    row.eachCell(cell=>{cell.fill={type:"pattern",pattern:"solid",fgColor:{argb:"FF"+fillColor}};cell.border={bottom:{style:"thin",color:{argb:"FFDDDDDD"}}};});
+    [8,9,10,11,12,13,15].forEach(colN=>{row.getCell(colN).numFmt="#,##0";});
+  });
+
+  ws.columns=[{width:12},{width:12},{width:13},{width:26},{width:13},{width:10},{width:12},
+    {width:14},{width:14},{width:14},{width:14},{width:12},{width:14},{width:9},{width:12},{width:12},{width:26}];
+  ws.autoFilter={from:"A5",to:"Q5"};
+
+  // Resumen por categoria al final
+  const r0=cs.length+8;
+  ws.getCell(`A${r0}`).value="Resumen por categoría"; ws.getCell(`A${r0}`).font={bold:true,size:12,color:{argb:"FF0D1B2A"}};
+  const cats=["A","B","C","D","E1","E2"];
+  ws.getRow(r0+1).values=["Categoría","N° créditos","Saldo total"];
+  ws.getRow(r0+1).font={bold:true,color:{argb:"FFFFFFFF"}};
+  ws.getRow(r0+1).eachCell(c=>c.fill={type:"pattern",pattern:"solid",fgColor:{argb:"FF0D1B2A"}});
+  cats.forEach((cat,i)=>{
+    const sub=cs.filter(c=>c.categoria===cat);
+    const row=ws.getRow(r0+2+i);
+    row.values=[cat,sub.length,sub.reduce((s,c)=>s+c.saldoTotal,0)];
+    row.getCell(1).fill={type:"pattern",pattern:"solid",fgColor:{argb:"FF"+(CAT_HEX[cat]||"FFFFFF")}};
+    row.getCell(3).numFmt="#,##0";
+  });
+
+  const buf=await wb.xlsx.writeBuffer();
+  const blob=new Blob([buf],{type:"application/octet-stream"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=`Cartera_GEM_${STATE.empresaActiva}_${periodoSel}.xlsx`;
+  a.click();
+  toast("Excel institucional exportado");
+}
+
+// ─────────── CLIENTES / FICHA 360 ───────────
+function renderClientes(){
+  let cs=visibleCreditos().slice();
+  const docCount={}; cs.forEach(c=>{docCount[c.clienteDoc]=(docCount[c.clienteDoc]||0)+1;});
+  const clientesUnicos=Object.keys(docCount).length;
+  const conMultiples=Object.values(docCount).filter(n=>n>1).length;
+  let h=head("👤 Clientes y créditos","Busca un cliente y abre su ficha 360° con historial completo.");
+  h+=`<div class="kpi-grid">
+    ${kpiC("Clientes únicos",clientesUnicos,"","blue")}
+    ${kpiC("Créditos totales",cs.length,"","")}
+    ${kpiC("Clientes con +1 crédito",conMultiples,"","orange")}
+    ${kpiC("Saldo total",fmt(cs.reduce((s,c)=>s+c.saldoTotal,0)),"","green")}
+  </div>
+  <div class="panel"><div class="toolbar">
+    <input class="inp" style="flex:1;min-width:220px" placeholder="Buscar cliente por nombre o documento…" oninput="filterClientes(this.value)">
+  </div><div id="clientesList">${clientesList(cs.slice(0,50),docCount)}</div></div>`;
+  return h;
+}
+function clientesList(cs,docCount){
+  docCount=docCount||{};
+  if(!cs.length)return `<div class="empty"><div class="ic">👤</div><h3>Sin clientes</h3></div>`;
+  return `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Cliente</th><th>Documento</th><th>Celular</th><th>Créditos</th><th>Categoría</th><th>Saldo</th><th></th></tr></thead><tbody>`+
+    cs.map(c=>`<tr>
+      <td style="cursor:pointer" onclick="openCliente('${c.id}')"><b style="color:var(--navy)">${c.nombre}</b></td>
+      <td>${c.clienteDoc}</td><td>${c.celular||"—"}</td>
+      <td>${docCount[c.clienteDoc]||1}</td><td>${catChip(c.categoria)}</td><td>${fmt(c.saldoTotal)}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="openCliente('${c.id}')">Ficha 360°</button></td></tr>`).join("")+
+    `</tbody></table></div>`;
+}
+function filterClientes(q){
+  q=q.toLowerCase();
+  const cs=visibleCreditos().filter(c=>c.nombre.toLowerCase().includes(q)||(c.clienteDoc||"").includes(q)).slice(0,50);
+  const docCount={}; visibleCreditos().forEach(c=>{docCount[c.clienteDoc]=(docCount[c.clienteDoc]||0)+1;});
+  document.getElementById("clientesList").innerHTML=clientesList(cs,docCount);
+}
+function openCliente(cid){
+  const c=STATE.creditos.find(x=>x.id===cid);if(!c)return;
+  const gs=STATE.gestiones.filter(g=>g.creditoId===cid).sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
+  const prs=STATE.promesas.filter(p=>p.creditoId===cid);
+  const pgs=STATE.pagos.filter(p=>p.creditoId===cid).sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
+  const otrosCreditos=STATE.creditos.filter(x=>x.clienteDoc===c.clienteDoc && x.id!==cid);
+  const timeline=[
+    ...gs.map(g=>({t:new Date(g.fecha),ic:"💬",txt:`Gestión — ${g.canal}: ${g.resultado}`,d:g.obs||g.responsable})),
+    ...prs.map(p=>({t:new Date(p.fecha),ic:"🤝",txt:`Promesa creada — ${fmt(p.valor)} para ${fechaBonita(p.fechaPrometida)}`,d:"Estado: "+p.estado})),
+    ...pgs.map(p=>({t:new Date(p.fecha),ic:"💵",txt:`Pago registrado — ${fmt(p.valor)}`,d:`Capital ${fmt(p.capital||0)} · Interés ${fmt(p.interes||0)}${p.mora?` · Mora ${fmt(p.mora)}`:''}${p.anticipado?` · Anticipado ${fmt(p.anticipado)}`:''}`})),
+  ].sort((a,b)=>b.t-a.t);
+  const s=semaforo(c),p=prioridad(c);
+  const cs2=CAT_STY[c.categoria]||CAT_STY.A;
+  const cuotasPagadas=pgs.length;
+  const cuotasFaltan=Math.max(0,(c.cuotasPend||0));
+
+  showModal(c.nombre,`
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;gap:10px;flex-wrap:wrap">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${estChip(c.estado,c)}
+        <span class="chip" style="background:${p.bg};color:${p.fg}">Prioridad ${p.lbl}</span>
+        ${s?`<span class="semaforo" style="background:${s.bg};color:${s.fg}"><span class="dot" style="background:${s.dot}"></span>${s.txt}</span>`:''}
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:10.5px;color:var(--gray);font-weight:700;text-transform:uppercase">Categoría</div>
+        <div style="font-size:32px;font-weight:900;color:${cs2.fg};line-height:1">${c.categoria}</div>
+      </div>
+    </div>
+    ${otrosCreditos.length?`<div style="background:var(--blue-bg);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12.5px;color:var(--blue)">
+      ℹ️ Este cliente tiene <b>${otrosCreditos.length} crédito(s) adicional(es)</b> en el sistema.</div>`:''}
+    <div class="form-grid" style="margin-bottom:16px">
+      ${info("Documento",c.clienteDoc)}${info("Celular",c.celular||"—")}
+      ${info("Entidad",c.entidad)}${info("Sede",c.sede)}
+      ${info("Saldo total",fmt(c.saldoTotal))}${info("Saldo vencido",fmt(c.saldoVencido))}
+      ${info("Cuota mensual",fmt(c.cuotaValor))}${info("Día de pago",c.diaPago||"—")}
+      ${info("Cuotas ya pagadas",cuotasPagadas)}${info("Cuotas faltantes",cuotasFaltan)}
+      ${info("Inicio",fechaBonita(c.fechaInicio))}${info("Vence",fechaBonita(c.fechaVence))}
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">
+      ${waBtn(c)}
+      <button class="btn btn-ghost btn-sm" onclick="openGestion('${c.id}')">Registrar gestión</button>
+      <button class="btn btn-ghost btn-sm" onclick="openPromesa('${c.id}')">Crear promesa</button>
+      <button class="btn btn-ghost btn-sm" onclick="openPago('${c.id}')">Registrar pago</button>
+    </div>
+    <div style="font-weight:700;color:var(--navy);margin-bottom:10px;font-size:14.5px">🕒 Línea de tiempo (gestiones, pagos y promesas)</div>
+    ${timeline.length?timeline.map(e=>`<div style="display:flex;gap:10px;padding:9px 0;border-bottom:1px solid #f2eee2">
+      <span style="font-size:17px">${e.ic}</span>
+      <div style="flex:1"><div style="font-size:13px;color:var(--navy);font-weight:600">${e.txt}</div>
+      ${e.d?`<div style="font-size:12px;color:var(--gray)">${e.d}</div>`:''}
+      <div style="font-size:11px;color:var(--gray-l)">${e.t.toLocaleString("es-CO")}</div></div></div>`).join("")
+      :`<div style="color:var(--gray);font-size:13px;padding:10px 0">Sin eventos registrados aún. Registra una gestión, promesa o pago.</div>`}
+  `);
+}
+function info(l,v){return `<div class="field"><label>${l}</label><div style="font-size:14px;color:var(--navy);font-weight:600;padding:2px 0">${v}</div></div>`;}
+
+// ─────────── PAGOS ───────────
+function renderPagos(){
+  let h=head("💵 Pagos",`${STATE.pagos.length} pagos registrados. Haz clic en cualquier pago para ver el detalle completo y el comprobante.`);
+  h+=`<div class="panel"><div class="panel-title">Historial de pagos</div>`;
+  if(!STATE.pagos.length)h+=`<div class="empty"><div class="ic">💵</div><h3>Sin pagos registrados</h3><p>Los pagos se registran desde la ficha del cliente o los cobros del día.</p></div>`;
+  else h+=STATE.pagos.slice().reverse().map(p=>pagoRow(p)).join("");
+  h+=`</div>`;return h;
+}
+function pagoRow(p){
+  const c=STATE.creditos.find(x=>x.id===p.creditoId);
+  return `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 6px;border-bottom:1px solid #f2eee2;cursor:pointer;border-radius:8px" onclick="openPagoDetalle('${p.id}')" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background='transparent'">
+    <div><b style="color:var(--navy);font-size:14.5px">${c?c.nombre:"—"}</b>
+      <div style="font-size:12.5px;color:var(--gray)">${fmt(p.valor)} · ${p.metodo||"—"} · ${fechaBonita(p.fecha.slice(0,10))} ${p.comprobante?'· 📎 con comprobante':'· sin comprobante'}</div></div>
+    <span class="chip" style="background:var(--green-bg);color:var(--green)">Registrado</span>
+  </div>`;
+}
+function openPagoDetalle(id){
+  const p=STATE.pagos.find(x=>x.id===id); if(!p)return;
+  const c=STATE.creditos.find(x=>x.id===p.creditoId);
+  showModal("Detalle del pago",`
+    <div class="form-grid" style="margin-bottom:14px">
+      ${info("Cliente",c?c.nombre:"—")}${info("Documento",c?c.clienteDoc:"—")}
+      ${info("Capital",fmt(p.capital||0))}${info("Interés corriente",fmt(p.interes||0))}
+      ${info("Interés de mora",fmt(p.mora||0))}${info("Anticipado",fmt(p.anticipado||0))}
+      ${info("Total pagado",fmt(p.valor))}${info("Método",p.metodo||"—")}
+      ${info("Fecha",fechaBonita(p.fecha.slice(0,10)))}${info("Referencia",p.referencia||"—")}
+      ${info("Responsable",p.responsable||"—")}${info("Empresa",c?c.entidad:"—")}
+    </div>
+    ${p.obs?`<div class="field" style="margin-bottom:14px"><label>Observaciones</label><div style="font-size:13.5px;color:var(--navy)">${p.obs}</div></div>`:''}
+    <div class="field"><label>Comprobante</label>
+      ${p.comprobante?
+        (p.comprobante.startsWith("data:image")?
+          `<img src="${p.comprobante}" style="max-width:100%;border-radius:10px;border:1px solid var(--line);margin-top:6px">`
+          :`<a class="btn btn-ghost btn-sm" href="${p.comprobante}" download="${p.comprobanteNombre||'comprobante'}" style="margin-top:6px;display:inline-flex">⭳ Descargar ${p.comprobanteNombre||'archivo'}</a>`)
+        :`<div style="color:var(--gray);font-size:13px;margin-top:4px">No se adjuntó comprobante para este pago.</div>`}
+    </div>
+  `);
+}
+
+// ─────────── PROMESAS ───────────
+function renderPromesas(){
+  // marcar incumplidas
+  STATE.promesas.forEach(p=>{if(p.estado==="Pendiente"&&p.fechaPrometida<iso(hoy())){
+    const pago=STATE.pagos.find(pg=>pg.creditoId===p.creditoId&&pg.fecha.slice(0,10)>=p.fecha.slice(0,10));
+    if(!pago)p.estado="Incumplida";}});
+  save();
+  let h=head("🤝 Promesas de pago",`${STATE.promesas.length} promesas registradas. Haz clic en una fila para ver el detalle.`);
+  if(!STATE.promesas.length){h+=`<div class="empty card" style="padding:44px"><div class="ic">🤝</div><h3>Sin promesas</h3><p>Crea promesas de pago desde la ficha del cliente o los cobros del día.</p></div>`;return h;}
+  h+=`<div class="panel" style="padding:0"><div class="tbl-wrap"><table class="tbl"><thead><tr>
+    <th>Cliente</th><th>Valor prometido</th><th>Fecha prometida</th><th>Estado</th><th>Canal</th></tr></thead><tbody>`;
+  STATE.promesas.slice().reverse().forEach(p=>{const c=STATE.creditos.find(x=>x.id===p.creditoId);
+    const est={Pendiente:{bg:"var(--blue-bg)",fg:"var(--blue)"},Cumplida:{bg:"var(--green-bg)",fg:"var(--green)"},
+      Incumplida:{bg:"var(--red-bg)",fg:"var(--red)"},Reprogramada:{bg:"var(--orange-bg)",fg:"var(--orange)"},
+      Cancelada:{bg:"#eee",fg:"var(--gray)"},"Cumplida parcialmente":{bg:"var(--yellow-bg)",fg:"var(--yellow)"}}[p.estado]||{bg:"#eee",fg:"#000"};
+    h+=`<tr style="cursor:pointer" onclick="openPromesaDetalle('${p.id}')"><td><b>${c?c.nombre:"—"}</b></td><td>${fmt(p.valor)}</td><td>${fechaBonita(p.fechaPrometida)}</td>
+      <td><span class="chip" style="background:${est.bg};color:${est.fg}">${p.estado}</span></td><td>${p.canal||"—"}</td></tr>`;});
+  h+=`</tbody></table></div></div>`;return h;
+}
+function openPromesaDetalle(id){
+  const p=STATE.promesas.find(x=>x.id===id); if(!p)return;
+  const c=STATE.creditos.find(x=>x.id===p.creditoId);
+  showModal("Detalle de la promesa",`
+    <div class="form-grid" style="margin-bottom:14px">
+      ${info("Cliente",c?c.nombre:"—")}${info("Documento",c?c.clienteDoc:"—")}
+      ${info("Valor prometido",fmt(p.valor))}${info("Fecha prometida",fechaBonita(p.fechaPrometida))}
+      ${info("Canal",p.canal||"—")}${info("Estado",p.estado)}
+      ${info("Fecha de gestión",fechaBonita((p.fecha||"").slice(0,10)))}
+    </div>
+    ${p.obs?`<div class="field" style="margin-bottom:14px"><label>Observaciones</label><div style="font-size:13.5px;color:var(--navy)">${p.obs}</div></div>`:''}
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      ${p.estado!=="Cumplida"?`<button class="btn btn-sm" style="background:var(--green-bg);color:var(--green)" onclick="cumplirPromesa('${p.id}');closeModal()">Marcar cumplida</button>`:''}
+      ${p.estado!=="Cancelada"?`<button class="btn btn-sm" style="background:#eee;color:var(--gray)" onclick="cambiarEstadoPromesa('${p.id}','Cancelada')">Cancelar</button>`:''}
+      ${p.estado!=="Reprogramada"?`<button class="btn btn-sm" style="background:var(--orange-bg);color:var(--orange)" onclick="cambiarEstadoPromesa('${p.id}','Reprogramada')">Reprogramar</button>`:''}
+    </div>
+  `);
+}
+function cambiarEstadoPromesa(id,estado){const p=STATE.promesas.find(x=>x.id===id);if(p){p.estado=estado;save();toast("Promesa actualizada");closeModal();render();}}
+function cumplirPromesa(id){const p=STATE.promesas.find(x=>x.id===id);if(p){p.estado="Cumplida";save();toast("Promesa cumplida");render();}}
+
+// ═══════════ MODALES DE ACCIÓN ═══════════
+function showModal(title,body){
+  document.getElementById("modalBox").innerHTML=`<div class="modal-head"><h3>${title}</h3><span class="modal-close" onclick="closeModal()">×</span></div><div class="modal-body">${body}</div>`;
+  document.getElementById("modalBg").classList.add("show");
+}
+function closeModal(){document.getElementById("modalBg").classList.remove("show");}
+
+function openGestion(cid){
+  const c=STATE.creditos.find(x=>x.id===cid);
+  showModal("Registrar gestión — "+c.nombre,`
+    <div class="form-grid">
+      <div class="field"><label>Canal</label><select class="inp" id="g_canal">${optSel(["WhatsApp","Llamada","Correo","Presencial","Otro"])}</select></div>
+      <div class="field"><label>Resultado</label><select class="inp" id="g_res">${optSel(["Contactado","No responde","Número inválido","Promesa de pago","Pago realizado","Solicita información","Reprogramado","Caso especial"])}</select></div>
+      <div class="field full"><label>Observación</label><textarea class="inp" id="g_obs" rows="3"></textarea></div>
+      <div class="field"><label>Próxima gestión</label><input type="date" class="inp" id="g_prox"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveGestion('${cid}')">Guardar gestión</button></div>`);
+}
+function saveGestion(cid){
+  STATE.gestiones.push({id:uid(),creditoId:cid,fecha:new Date().toISOString(),
+    canal:val("g_canal"),resultado:val("g_res"),obs:val("g_obs"),proxima:val("g_prox"),responsable:currentUser()?currentUser().nombre:"Sistema"});
+  save();closeModal();toast("Gestión registrada");render();
+}
+function openPromesa(cid){
+  const c=STATE.creditos.find(x=>x.id===cid);
+  showModal("Crear promesa — "+c.nombre,`
+    <div class="form-grid">
+      <div class="field"><label>Valor prometido</label><input type="number" class="inp" id="p_val" value="${c.cuotaValor}"></div>
+      <div class="field"><label>Fecha prometida</label><input type="date" class="inp" id="p_fecha" value="${iso(hoy())}"></div>
+      <div class="field"><label>Canal</label><select class="inp" id="p_canal">${optSel(["WhatsApp","Llamada","Presencial","Correo"])}</select></div>
+      <div class="field full"><label>Observaciones</label><textarea class="inp" id="p_obs" rows="2"></textarea></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="savePromesa('${cid}')">Guardar promesa</button></div>`);
+}
+function savePromesa(cid){
+  STATE.promesas.push({id:uid(),creditoId:cid,fecha:new Date().toISOString(),
+    valor:+val("p_val"),fechaPrometida:val("p_fecha"),canal:val("p_canal"),obs:val("p_obs"),estado:"Pendiente"});
+  save();closeModal();toast("Promesa creada");render();
+}
+function openPago(cid){
+  const c=STATE.creditos.find(x=>x.id===cid);
+  const capSug=Math.round((c.cuotaValor||0)*0.8), intSug=(c.cuotaValor||0)-capSug;
+  showModal("Registrar pago — "+c.nombre,`
+    <div style="font-size:12px;color:var(--gray);margin-bottom:10px">Desglosa el pago para que el informe diario de capital e intereses quede exacto.</div>
+    <div class="form-grid">
+      <div class="field"><label>Capital</label><input type="number" class="inp" id="pg_cap" value="${capSug}"></div>
+      <div class="field"><label>Interés corriente</label><input type="number" class="inp" id="pg_int" value="${intSug}"></div>
+      <div class="field"><label>Interés de mora</label><input type="number" class="inp" id="pg_mora" value="0"></div>
+      <div class="field"><label>Valor anticipado</label><input type="number" class="inp" id="pg_ant" value="0"></div>
+      <div class="field"><label>Método</label><select class="inp" id="pg_met">${optSel(["Bancolombia","Efectivo"])}</select></div>
+      <div class="field"><label>Fecha</label><input type="date" class="inp" id="pg_fecha" value="${iso(hoy())}"></div>
+      <div class="field full"><label>Referencia (opcional)</label><input class="inp" id="pg_ref"></div>
+      <div class="field full"><label>Comprobante (imagen o PDF)</label><input type="file" class="inp" id="pg_file" accept="image/*,.pdf"></div>
+      <div class="field full"><label>Observaciones</label><textarea class="inp" id="pg_obs" rows="2"></textarea></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="savePago('${cid}')">Registrar pago</button></div>`);
+}
+async function savePago(cid){
+  const c=STATE.creditos.find(x=>x.id===cid);
+  const capital=+val("pg_cap")||0, interes=+val("pg_int")||0, mora=+val("pg_mora")||0, anticipado=+val("pg_ant")||0;
+  const valor=capital+interes+mora+anticipado;
+  const fileInput=document.getElementById("pg_file");
+  let comprobante=null, comprobanteNombre=null;
+  if(fileInput && fileInput.files && fileInput.files[0]){
+    const file=fileInput.files[0];
+    comprobanteNombre=file.name;
+    comprobante=await new Promise((res)=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(file);});
+  }
+  STATE.pagos.push({id:uid(),creditoId:cid,fecha:val("pg_fecha")+"T12:00:00",capital,interes,mora,anticipado,valor,
+    metodo:val("pg_met"),referencia:val("pg_ref"),obs:val("pg_obs"),estado:"Registrado",
+    comprobante,comprobanteNombre,responsable:currentUser()?currentUser().nombre:"Sistema"});
+  // Reflejar el pago en el saldo del credito (capital + anticipado reducen la deuda; interes y mora no)
+  if(c){
+    const reduccion=capital+anticipado;
+    c.saldoTotal=Math.max(0,c.saldoTotal-reduccion);
+    c.saldoVencido=Math.max(0,c.saldoVencido-reduccion);
+    c.saldoSinVencer=Math.max(0,c.saldoTotal-c.saldoVencido);
+    if(c.saldoVencido===0) c.diasMora=0;
+  }
+  save();closeModal();toast("Pago registrado y saldo actualizado");render();
+}
+function val(id){const e=document.getElementById(id);return e?e.value:"";}
+</script>
+<script>
+// ─────────── IMPORTAR EXCEL ───────────
+let importPreview=null;
+function renderImportar(){
+  let h=head("📥 Importar Excel","Sube el archivo de cartera. El sistema detecta la entidad, la sede, la fecha y el periodo automáticamente — no hay que indicarlos a mano.");
+  h+=`<div class="panel">
+    <div class="panel-title">Actualizar cartera desde Excel</div>
+    <div style="border:2px dashed var(--line);border-radius:12px;padding:30px;text-align:center;background:var(--cream)">
+      <div style="font-size:34px;margin-bottom:8px">📥</div>
+      <div style="font-weight:700;color:var(--navy);margin-bottom:4px">Selecciona el archivo Excel del día</div>
+      <div style="font-size:12.5px;color:var(--gray);margin-bottom:6px">Formatos .xlsx o .xls exportados de CISCAFÉ</div>
+      <div style="font-size:12px;color:var(--gray);margin-bottom:16px">📅 Fecha y hora de carga: <b style="color:var(--navy)">${new Date().toLocaleString("es-CO")}</b> · Periodo: <b style="color:var(--navy)">${iso(hoy()).slice(0,7)}</b> (se registran automáticamente)</div>
+      <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none" onchange="procesarArchivo(this.files[0])">
+      <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">Seleccionar archivo</button>
+      <div style="margin-top:10px"><button class="btn btn-ghost btn-sm" onclick="descargarPlantillaExcel()">⭳ Descargar plantilla Excel (Coomsertar + Coopfisol)</button></div>
+    </div>
+    <div id="importResult"></div>
+  </div>
+  <div class="panel">
+    <div class="panel-title">Historial de importaciones</div>
+    ${STATE.importaciones.length?`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Fecha y hora</th><th>Archivo</th><th>Entidad detectada</th><th>Periodo</th><th>Registros</th><th>Usuario</th></tr></thead><tbody>`+
+      STATE.importaciones.slice().reverse().map(im=>`<tr><td>${new Date(im.fecha).toLocaleString("es-CO")}</td><td>${im.archivo}</td><td>${im.entidad}</td><td>${im.periodo}</td><td>${im.registros}</td><td>${im.usuario}</td></tr>`).join("")+
+      `</tbody></table></div>`:`<div class="empty"><div class="ic">📄</div><h3>Sin importaciones</h3></div>`}
+  </div>`;
+  return h;
+}
+function detectarEntidad(wb){
+  // Busca en los nombres de hoja o en el contenido si menciona Coopfisol; por defecto Coomsertar
+  const nombres=wb.SheetNames.join(" ").toUpperCase();
+  if(nombres.includes("COOPFISOL"))return "Coopfisol";
+  return "Coomsertar";
+}
+function procesarArchivo(file){
+  if(!file)return;
+  const res=document.getElementById("importResult");
+  if(typeof XLSX==="undefined"){
+    res.innerHTML=`<div style="margin-top:16px;padding:16px;background:var(--red-bg);border-radius:12px;color:var(--red);font-size:13px">
+      No se pudo cargar el lector de Excel (necesita conexión a internet la primera vez). Verifica tu conexión y recarga la página. Una vez cargado, funciona sin problema.</div>`;
+    return;
+  }
+  res.innerHTML=`<div style="padding:20px;text-align:center;color:var(--gray)">⏳ Procesando ${file.name}…</div>`;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const wb=XLSX.read(new Uint8Array(e.target.result),{type:"array"});
+      const parsed=parseCarteraWB(wb);
+      const entidad=detectarEntidad(wb);
+      importPreview={file:file.name,rows:parsed.rows,warnings:parsed.warnings,
+        entidad, fecha:new Date().toISOString(), periodo:iso(hoy()).slice(0,7)};
+      mostrarPreview();
+    }catch(err){res.innerHTML=`<div style="padding:18px;color:var(--red)">Error al leer el archivo: ${err.message}</div>`;}
+  };
+  reader.readAsArrayBuffer(file);
+}
+function parseCarteraWB(wb){
+  // buscar la primera hoja que parezca detalle de cartera
+  const rows=[]; const warnings=[];
+  let currentCat=null;
+  for(const sn of wb.SheetNames){
+    const ws=wb.Sheets[sn];
+    const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:""});
+    // heurística: buscar fila con NIT/NOMBRE
+    let hdrRow=-1, colMap={};
+    for(let i=0;i<Math.min(data.length,15);i++){
+      const row=data[i].map(x=>String(x).toUpperCase().trim());
+      if(row.some(c=>c.includes("NIT"))&&row.some(c=>c.includes("NOMBRE"))){hdrRow=i;
+        row.forEach((c,j)=>{
+          if(c.includes("NIT")||c.includes("DOCUMENTO")||c.includes("CEDULA"))colMap.nit=j;
+          else if(c.includes("NOMBRE"))colMap.nombre=j;
+          else if(c.includes("CELULAR")||c.includes("TELEFONO"))colMap.cel=j;
+          else if(c==="SALDO"||c.includes("SALDO TOTAL"))colMap.saldo=j;
+          else if(c.includes("SIN VENCER"))colMap.sinv=j;
+          else if(c.includes("FECHA")&&colMap.fecha==null)colMap.fecha=j;
+          else if(c.includes("VENCE"))colMap.vence=j;
+          else if(c.includes("SEDE")||c.includes("CIUDAD"))colMap.sede=j;
+        });break;}
+    }
+    if(hdrRow<0)continue;
+    // detectar sede desde el nombre de la hoja si no hay columna
+    let sedeHoja="Ibague";
+    const snUp=sn.toUpperCase();
+    if(snUp.includes("GIRARDOT"))sedeHoja="Girardot";
+    else if(snUp.includes("ROVIRA"))sedeHoja="Rovira";
+    else if(snUp.includes("NEIVA"))sedeHoja="Neiva";
+    for(let i=hdrRow+1;i<data.length;i++){
+      const row=data[i]; const a=String(row[0]||"").trim();
+      if(!a)continue;
+      if(a.toUpperCase().includes("CATEGORIA")){currentCat=detectCat(a);continue;}
+      if(a.toUpperCase().startsWith("TOTAL"))continue;
+      const nombre=String(row[colMap.nombre]||"").trim();
+      if(!nombre)continue;
+      const saldo=num(row[colMap.saldo]);
+      if(saldo<=0){warnings.push(`Fila ${i+1}: saldo cero o inválido (${nombre})`);continue;}
+      rows.push({clienteDoc:String(row[colMap.nit]||"").trim(),nombre,
+        celular:limpiarCel(row[colMap.cel]),saldoTotal:saldo,
+        saldoSinVencer:num(row[colMap.sinv])||saldo,categoria:currentCat||"A",
+        sede: colMap.sede!=null && row[colMap.sede] ? String(row[colMap.sede]).trim() : sedeHoja});
+    }
+  }
+  // detección de duplicados
+  const seen={}; rows.forEach(r=>{if(seen[r.clienteDoc])warnings.push(`Documento duplicado: ${r.nombre}`);seen[r.clienteDoc]=1;});
+  return {rows,warnings};
+}
+function detectCat(s){s=s.toUpperCase();if(s.includes("E 1")||s.includes("E1"))return"E1";if(s.includes("E 2")||s.includes("E2"))return"E2";
+  if(s.includes("CATEGORIA B"))return"B";if(s.includes("CATEGORIA C"))return"C";if(s.includes("CATEGORIA D"))return"D";return"A";}
+function num(v){if(v==null||v==="")return 0;const n=parseFloat(String(v).replace(/[^0-9.-]/g,""));return isNaN(n)?0:n;}
+function limpiarCel(v){const d=String(v||"").replace(/\D/g,"");return d.length>=10?d.slice(0,10):"";}
+
+function mostrarPreview(){
+  const p=importPreview;
+  const nuevos=p.rows.filter(r=>!STATE.creditos.some(c=>c.clienteDoc===r.clienteDoc)).length;
+  const actualiza=p.rows.length-nuevos;
+
+  // ═══ ARQUEO / CONTINGENCIA: comparar contra el saldo actual antes de aplicar ═══
+  const inconsistencias=[];
+  p.rows.forEach(r=>{
+    const ex=STATE.creditos.find(c=>c.clienteDoc===r.clienteDoc);
+    if(ex){
+      const diff=Math.abs(ex.saldoTotal-r.saldoTotal);
+      // si el saldo nuevo sube en vez de bajar de forma inusual (más del doble), o cambia mas de 50% sin pago registrado, marcar
+      const huboPago=STATE.pagos.some(pg=>pg.creditoId===ex.id && pg.fecha.slice(0,7)===p.periodo);
+      if(diff>0 && r.saldoTotal>ex.saldoTotal && !huboPago){
+        inconsistencias.push({clienteDoc:r.clienteDoc,nombre:r.nombre,saldoAnterior:ex.saldoTotal,saldoNuevo:r.saldoTotal,diff,creditoId:ex.id});
+      }
+    }
+  });
+  importPreview.inconsistencias=inconsistencias;
+  importPreview.reconfirmaciones={};
+
+  document.getElementById("importResult").innerHTML=`
+    <div style="margin-top:18px;padding:16px;background:var(--cream);border-radius:12px">
+      <div style="font-weight:700;color:var(--navy);margin-bottom:10px">Vista previa — ${p.file}</div>
+      <div class="kpi-grid" style="margin-bottom:12px">
+        ${kpiC("Entidad detectada",p.entidad,"","blue")}
+        ${kpiC("Registros válidos",p.rows.length,"","green")}
+        ${kpiC("Clientes nuevos",nuevos,"","")}
+        ${kpiC("Advertencias",p.warnings.length,"","orange")}
+      </div>
+      ${p.warnings.length?`<details style="margin-bottom:12px"><summary style="cursor:pointer;color:var(--orange);font-weight:600;font-size:12.5px">Ver ${p.warnings.length} advertencias</summary>
+        <div style="max-height:140px;overflow-y:auto;font-size:11.5px;color:var(--gray);margin-top:8px">${p.warnings.slice(0,50).map(w=>"• "+w).join("<br>")}</div></details>`:''}
+      ${inconsistencias.length?`
+      <div style="background:var(--red-bg);border-radius:10px;padding:14px;margin-bottom:14px">
+        <div style="font-weight:800;color:var(--red);margin-bottom:8px">🚨 Arqueo: ${inconsistencias.length} saldo(s) no cuadran (subieron sin pago registrado este mes)</div>
+        <div style="font-size:12px;color:var(--red);margin-bottom:10px">Confirma manualmente el valor correcto para cada caso antes de continuar.</div>
+        ${inconsistencias.map((inc,i)=>`<div style="background:#fff;border-radius:8px;padding:10px;margin-bottom:8px">
+          <div style="font-weight:700;color:var(--navy);font-size:13px">${inc.nombre} <span style="color:var(--gray);font-weight:400">(CC ${inc.clienteDoc})</span></div>
+          <div style="font-size:12px;color:var(--gray);margin:4px 0">Saldo anterior: ${fmt(inc.saldoAnterior)} → Nuevo en archivo: ${fmt(inc.saldoNuevo)} (diferencia ${fmt(inc.diff)})</div>
+          <label style="font-size:11.5px;font-weight:600;color:var(--navy)">Valor real confirmado (edítalo si el archivo está mal):</label>
+          <input type="number" class="inp" style="width:100%;margin-top:4px" value="${inc.saldoNuevo}" onchange="importPreview.reconfirmaciones['${inc.clienteDoc}']=+this.value">
+        </div>`).join("")}
+      </div>`:''}
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary" onclick="confirmarImport()">Confirmar y actualizar cartera</button>
+        <button class="btn btn-ghost" onclick="importPreview=null;document.getElementById('importResult').innerHTML=''">Cancelar</button>
+      </div>
+    </div>`;
+}
+function confirmarImport(){
+  const p=importPreview;
+  p.rows.forEach(r=>{
+    // aplicar reconfirmación manual del arqueo si existe
+    const saldoFinal = (p.reconfirmaciones && p.reconfirmaciones[r.clienteDoc]!=null) ? p.reconfirmaciones[r.clienteDoc] : r.saldoTotal;
+    const ex=STATE.creditos.find(c=>c.clienteDoc===r.clienteDoc);
+    if(ex){ex.saldoTotal=saldoFinal;ex.saldoSinVencer=r.saldoSinVencer;
+      ex.saldoVencido=Math.max(0,saldoFinal-r.saldoSinVencer);ex.categoria=r.categoria;
+      if(r.celular)ex.celular=r.celular; if(r.sede)ex.sede=r.sede;}
+    else{STATE.creditos.push({id:uid(),clienteDoc:r.clienteDoc,nombre:r.nombre,celular:r.celular,
+      entidad:p.entidad,sede:r.sede||"Ibague",responsable:"Sin asignar",categoria:r.categoria,estado:"Activo",
+      fechaInicio:"",fechaVence:"",diaPago:null,saldoTotal:saldoFinal,saldoSinVencer:r.saldoSinVencer,
+      saldoVencido:Math.max(0,saldoFinal-r.saldoSinVencer),cuotaValor:0,cuotasPend:0,diasMora:0,obs:"",etiquetas:[]});}
+  });
+  STATE.importaciones.push({id:uid(),fecha:p.fecha,archivo:p.file,
+    entidad:p.entidad,periodo:p.periodo,registros:p.rows.length,usuario:currentUser()?currentUser().nombre:"Sistema"});
+  STATE.lastUpdate=new Date().toISOString();
+  save();importPreview=null;
+  toast("Cartera actualizada correctamente");
+  go("dashboard");
+}
+function descargarPlantillaExcel(){
+  const headerRow=["NIT","NOMBRE","CELULAR","SALDO","SIN VENCER","SEDE"];
+  const ejemplo=[["","CATEGORIA A RIESGO NORMAL","","","",""],
+    ["12345678","EJEMPLO CLIENTE UNO","3001234567",1000000,1000000,"Ibague"],
+    ["","CATEGORIA E2 RIESGO INCOBRABLE","","","",""],
+    ["87654321","EJEMPLO CLIENTE DOS","3009876543",500000,0,"Girardot"],
+    ["","TOTAL","","1500000","1000000",""]];
+  const wsC=XLSX.utils.aoa_to_sheet([headerRow,...ejemplo]);
+  const wsF=XLSX.utils.aoa_to_sheet([headerRow,["","(Pega aquí los datos de Coopfisol con el mismo formato)","","","",""]]);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,wsC,"COOMSERTAR");
+  XLSX.utils.book_append_sheet(wb,wsF,"COOPFISOL");
+  XLSX.writeFile(wb,"Plantilla_Cartera_GEM.xlsx");
+  toast("Plantilla descargada");
+}
+
+// ─────────── CALIDAD DE DATOS ───────────
+function renderCalidad(){
+  const cs=visibleCreditos();
+  const celInv=cs.filter(c=>!c.celular||c.celular.length!==10);
+  const dups={};cs.forEach(c=>dups[c.clienteDoc]=(dups[c.clienteDoc]||0)+1);
+  const docDup=cs.filter(c=>dups[c.clienteDoc]>1);
+  const sinResp=cs.filter(c=>c.responsable==="Sin asignar"&&c.estado==="Activo");
+  const sinCuota=cs.filter(c=>c.estado==="Activo"&&!c.diaPago);
+  const saldoInc=cs.filter(c=>c.saldoVencido>c.saldoTotal);
+
+  // ═══ ARQUEO GENERAL: comparar saldo total actual vs. la última importación registrada ═══
+  const ultimaImport=STATE.importaciones.filter(i=>i.entidad===STATE.empresaActiva || STATE.empresaActiva==="Ambas").slice(-1)[0];
+  const saldoActual=cs.reduce((s,c)=>s+c.saldoTotal,0);
+  const totalPagosDesdeImport=ultimaImport ? STATE.pagos.filter(p=>{const c=STATE.creditos.find(x=>x.id===p.creditoId);return c && new Date(p.fecha)>=new Date(ultimaImport.fecha);}).reduce((s,p)=>s+(p.capital||0)+(p.anticipado||0),0) : 0;
+
+  let h=head("✔️ Calidad de datos","Arqueo general de la cartera e inconsistencias detectadas para corregir.");
+  h+=`<div class="panel" style="border-left:4px solid var(--gold)">
+    <div class="panel-title">🧮 Arqueo general — ${STATE.empresaActiva}</div>
+    <div class="form-grid">
+      ${info("Última importación",ultimaImport?new Date(ultimaImport.fecha).toLocaleString("es-CO"):"Sin importaciones")}
+      ${info("Saldo total actual de cartera",fmt(saldoActual))}
+      ${info("Capital+anticipado recaudado desde la última carga",fmt(totalPagosDesdeImport))}
+      ${info("Créditos en el sistema",cs.length)}
+    </div>
+    <div style="font-size:12px;color:var(--gray);margin-top:8px">Este arqueo compara el saldo vivo del sistema contra los movimientos registrados. Las inconsistencias detectadas al momento de importar un Excel nuevo aparecen automáticamente en la pantalla de importación, con espacio para reconfirmar el valor correcto de forma manual.</div>
+  </div>`;
+  h+=`<div class="kpi-grid">
+    ${kpiC("Celulares inválidos",celInv.length,"","orange")}
+    ${kpiC("Documentos duplicados",docDup.length,"","red")}
+    ${kpiC("Sin responsable",sinResp.length,"","")}
+    ${kpiC("Sin día de pago",sinCuota.length,"","")}
+  </div>`;
+  h+=calidadPanel("Celulares inválidos o faltantes",celInv,c=>`${c.nombre} — <span style="color:var(--red)">${c.celular||"vacío"}</span>`);
+  h+=calidadPanel("Créditos activos sin día de pago",sinCuota,c=>`${c.nombre} — falta día de pago para el semáforo`);
+  h+=calidadPanel("Saldos incoherentes (vencido > total)",saldoInc,c=>`${c.nombre} — vencido ${fmt(c.saldoVencido)} > total ${fmt(c.saldoTotal)}`);
+  if(!celInv.length && !sinCuota.length && !saldoInc.length && !docDup.length){
+    h+=`<div class="empty card" style="padding:40px"><div class="ic">✅</div><h3>Sin inconsistencias detectadas</h3><p>La cartera visible no presenta los problemas revisados por este módulo.</p></div>`;
+  }
+  return h;
+}
+function calidadPanel(titulo,arr,fmtFn){
+  if(!arr.length)return "";
+  return `<div class="panel"><div class="panel-title">${titulo} (${arr.length})</div>
+    ${arr.slice(0,30).map(c=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f2eee2;font-size:12.5px">
+      <span>${fmtFn(c)}</span><button class="btn btn-ghost btn-sm" onclick="openCliente('${c.id}')">Corregir</button></div>`).join("")}
+    ${arr.length>30?`<div style="font-size:11.5px;color:var(--gray);margin-top:8px">y ${arr.length-30} más…</div>`:''}</div>`;
+}
+
+// ─────────── INFORMES ───────────
+let informePeriodo="mensual";
+function renderInformes(){
+  let h=head("📄 Informes","Genera y exporta informes de cartera por periodo o por tema específico.");
+  const periodos=[["diario","Diario"],["semanal","Semanal"],["mensual","Mensual"],["trimestral","Trimestral"],["semestral","Semestral"],["anual","Anual"]];
+  h+=`<div class="panel">
+    <div class="panel-title">Periodo del informe</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      ${periodos.map(([k,t])=>`<button class="btn ${informePeriodo===k?'btn-primary':'btn-ghost'} btn-sm" onclick="informePeriodo='${k}';render()">${t}</button>`).join("")}
+    </div>
+  </div>`;
+  const cs=visibleCreditos();
+  const rango=rangoPeriodo(informePeriodo);
+  const pagosRango=STATE.pagos.filter(p=>{const c=STATE.creditos.find(x=>x.id===p.creditoId);return c && cs.includes(c) && p.fecha.slice(0,10)>=rango.desde && p.fecha.slice(0,10)<=rango.hasta;});
+  const totalRecaudo=pagosRango.reduce((s,p)=>s+p.valor,0);
+
+  h+=`<div class="kpi-grid">
+    ${kpiC("Recaudo del periodo",fmt(totalRecaudo),rango.label,"green")}
+    ${kpiC("Pagos registrados",pagosRango.length,"","")}
+    ${kpiC("Capital recaudado",fmt(pagosRango.reduce((s,p)=>s+(p.capital||0)+(p.anticipado||0),0)),"","blue")}
+    ${kpiC("Interés recaudado",fmt(pagosRango.reduce((s,p)=>s+(p.interes||0)+(p.mora||0),0)),"","orange")}
+  </div>`;
+
+  const porEnt={},porSede={},porCat={};
+  cs.forEach(c=>{porEnt[c.entidad]=(porEnt[c.entidad]||0)+c.saldoTotal;
+    porSede[c.sede]=(porSede[c.sede]||0)+c.saldoTotal;
+    porCat[c.categoria]=(porCat[c.categoria]||0)+c.saldoTotal;});
+  h+=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px" class="dash-cols">
+    ${tablaInforme("Por entidad",porEnt)}
+    ${tablaInforme("Por sede",porSede)}
+    ${tablaInforme("Por categoría",porCat)}
+  </div>
+  <div class="panel"><div class="panel-title">Informes específicos</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-ghost" onclick="exportCartera()">📊 Cartera completa (Excel)</button>
+      <button class="btn btn-ghost" onclick="go('cartera');carteraFiltros.cat='E1';render()">🔴 Solo categoría E1</button>
+      <button class="btn btn-ghost" onclick="go('cartera');carteraFiltros.cat='E2';render()">🔴 Solo categoría E2</button>
+      <button class="btn btn-ghost" onclick="go('clientes')">👤 Listado de clientes</button>
+      <button class="btn btn-ghost" onclick="window.print()">🖨️ Imprimir / PDF de esta vista</button>
+    </div>
+    <div style="font-size:12px;color:var(--gray);margin-top:10px">Los informes conservan la identidad de GEM y no generan errores de división por cero (las metas en cero se muestran como 0%, no como error).</div>
+  </div>`;
+  return h;
+}
+function rangoPeriodo(k){
+  const h=hoy(); const hastaStr=iso(h);
+  const d=new Date(h);
+  if(k==="diario"){return {desde:hastaStr,hasta:hastaStr,label:"Hoy"};}
+  if(k==="semanal"){d.setDate(d.getDate()-7);return {desde:iso(d),hasta:hastaStr,label:"Últimos 7 días"};}
+  if(k==="mensual"){d.setDate(d.getDate()-30);return {desde:iso(d),hasta:hastaStr,label:"Últimos 30 días"};}
+  if(k==="trimestral"){d.setDate(d.getDate()-90);return {desde:iso(d),hasta:hastaStr,label:"Últimos 90 días"};}
+  if(k==="semestral"){d.setDate(d.getDate()-182);return {desde:iso(d),hasta:hastaStr,label:"Últimos 6 meses"};}
+  d.setDate(d.getDate()-365);return {desde:iso(d),hasta:hastaStr,label:"Últimos 12 meses"};
+}
+function tablaInforme(t,obj){
+  const tot=Object.values(obj).reduce((a,b)=>a+b,0);
+  return `<div class="panel"><div class="panel-title">${t}</div>
+    ${Object.entries(obj).map(([k,v])=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f2eee2;font-size:12.5px">
+      <span style="color:var(--navy);font-weight:600">${k}</span><span style="color:var(--gray)">${fmt(v)} <b style="color:var(--navy)">(${tot?(v/tot*100).toFixed(0):0}%)</b></span></div>`).join("")}
+    <div style="display:flex;justify-content:space-between;padding:8px 0;margin-top:4px;border-top:2px solid var(--gold)">
+      <b style="color:var(--navy)">Total</b><b style="color:var(--navy)">${fmt(tot)}</b></div></div>`;
+}
+
+// ─────────── EQUIPO ───────────
+function renderEquipo(){
+  const resp={};
+  STATE.creditos.forEach(c=>{const r=c.responsable||"Sin asignar";
+    if(!resp[r])resp[r]={creditos:0,saldo:0,gestiones:0,promesas:0,pagos:0};
+    resp[r].creditos++;resp[r].saldo+=c.saldoTotal;});
+  STATE.gestiones.forEach(g=>{if(resp[g.responsable])resp[g.responsable].gestiones++;});
+  let h=head("Equipo","Productividad por gestor. Mide resultados reales, no solo mensajes enviados.");
+  h+=`<div class="panel" style="padding:0"><div class="tbl-wrap"><table class="tbl"><thead><tr>
+    <th>Gestor</th><th>Créditos</th><th>Saldo gestionado</th><th>Gestiones</th><th>Promesas</th><th>Pagos verificados</th></tr></thead><tbody>`;
+  Object.entries(resp).forEach(([k,v])=>{
+    const proms=STATE.promesas.filter(p=>{const c=STATE.creditos.find(x=>x.id===p.creditoId);return c&&c.responsable===k;}).length;
+    const pagos=STATE.pagos.filter(p=>p.estado==="Verificado").length;
+    h+=`<tr><td><b style="color:var(--navy)">${k}</b></td><td>${v.creditos}</td><td>${fmt(v.saldo)}</td><td>${v.gestiones}</td><td>${proms}</td><td>${pagos}</td></tr>`;});
+  h+=`</tbody></table></div></div>
+  <div style="font-size:11.5px;color:var(--gray)">En el MVP, la asignación de responsables se hace manualmente en cada crédito. En producción, cada gestor tendrá su propio acceso y sus métricas se calculan automáticamente.</div>`;
+  return h;
+}
+
+// ─────────── PIPELINE COMERCIAL ───────────
+const ETAPAS_PIPELINE = [
+  {k:"LD", t:"Lead Interesado", color:"#1A3A5C"},
+  {k:"INT_SSI", t:"Interesado Seguridad Social", color:"#2E86AB"},
+  {k:"INT_CCF", t:"Interesado Caja Compensación", color:"#2E86AB"},
+  {k:"INT_CRE", t:"Interesado Crédito", color:"#2E86AB"},
+  {k:"SEG_SSI", t:"Seguimiento Seguridad Social", color:"#E67E22"},
+  {k:"SEG_CCF", t:"Seguimiento Caja Compensación", color:"#E67E22"},
+  {k:"SEG_CRE", t:"Seguimiento Crédito", color:"#E67E22"},
+  {k:"VE", t:"Venta Efectiva", color:"#27AE60"},
+  {k:"PP", t:"Pedido Pagado y Finalizado", color:"#0F7B6C"},
+  {k:"LF", t:"Lead Frío", color:"#888888"},
+];
+function etapaInfo(k){return ETAPAS_PIPELINE.find(e=>e.k===k)||ETAPAS_PIPELINE[0];}
+function accionEtapa(k){
+  const acciones={
+    LD:"Responder bienvenida y calificar interés en las próximas 24h.",
+    INT_SSI:"Enviar info de planes de seguridad social y resolver dudas.",
+    INT_CCF:"Enviar info de caja de compensación y beneficios.",
+    INT_CRE:"Enviar info de crédito según aportes.",
+    SEG_SSI:"Hacer seguimiento de cierre — llamar o escribir hoy.",
+    SEG_CCF:"Hacer seguimiento de cierre — llamar o escribir hoy.",
+    SEG_CRE:"Hacer seguimiento de cierre — llamar o escribir hoy.",
+    VE:"Confirmar pago y avanzar a Pedido Pagado.",
+    PP:"Enviar bienvenida oficial como asociado.",
+    LF:"Considerar para campaña de remarketing.",
+  };
+  return acciones[k]||"";
+}
+let pipelineFiltroEtapa="Todas";
+function renderPipeline(){
+  const u=currentUser();
+  const misProspectos = STATE.prospectos.filter(p=> u.rol==="comercial" ? p.asesora===u.nombre : true);
+  const hoyStr=iso(hoy());
+  const requierenAccionHoy = misProspectos.filter(p=>p.etapa!=="PP" && p.etapa!=="LF" && (!p.proxContacto || p.proxContacto<=hoyStr));
+
+  let h=head("📈 Pipeline comercial","Seguimiento centralizado de prospectos y etapas de venta.",
+    `<button class="btn btn-primary" onclick="openProspecto()">+ Nuevo prospecto</button>`);
+
+  h+=`<div class="kpi-grid">
+    ${kpiC("Prospectos activos",misProspectos.filter(p=>p.etapa!=="PP"&&p.etapa!=="LF").length,"","blue")}
+    ${kpiC("Requieren acción hoy",requierenAccionHoy.length,"","orange")}
+    ${kpiC("Ventas efectivas",misProspectos.filter(p=>p.etapa==="VE"||p.etapa==="PP").length,"","green")}
+    ${kpiC("Leads fríos",misProspectos.filter(p=>p.etapa==="LF").length,"","")}
+  </div>`;
+
+  if(requierenAccionHoy.length){
+    h+=`<div class="panel" style="border-left:4px solid var(--orange)">
+      <div class="panel-title">⏰ Requieren acción hoy (${requierenAccionHoy.length})</div>
+      ${requierenAccionHoy.map(p=>{const e=etapaInfo(p.etapa);
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f2eee2">
+          <div><b style="color:var(--navy)">${p.nombre}</b>
+          <div style="font-size:12px;color:var(--gray)"><span class="chip" style="background:${e.color}22;color:${e.color}">${e.t}</span> ${accionEtapa(p.etapa)}</div></div>
+          <div style="display:flex;gap:6px">
+            ${p.celular?`<a class="btn btn-wa btn-sm" href="https://wa.me/57${p.celular}" target="_blank">💬</a>`:''}
+            <button class="btn btn-ghost btn-sm" onclick="openProspecto('${p.id}')">Ver</button>
+          </div></div>`;}).join("")}
+    </div>`;
+  }
+
+  h+=`<div class="panel">
+    <div class="toolbar">
+      <select class="inp" onchange="pipelineFiltroEtapa=this.value;render()">
+        <option ${pipelineFiltroEtapa==="Todas"?'selected':''}>Todas</option>
+        ${ETAPAS_PIPELINE.map(e=>`<option ${pipelineFiltroEtapa===e.k?'selected':''} value="${e.k}">${e.t}</option>`).join("")}
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="exportPipeline()">⭳ Exportar Excel</button>
+    </div>
+    <div class="tbl-wrap"><table class="tbl"><thead><tr>
+      <th>Nombre</th><th>Celular</th><th>Ciudad</th><th>Servicio</th><th>Etapa</th><th>Próximo contacto</th><th>Asesora</th><th></th>
+    </tr></thead><tbody>`;
+  const lista=misProspectos.filter(p=>pipelineFiltroEtapa==="Todas"||p.etapa===pipelineFiltroEtapa);
+  if(!lista.length){h+=`</tbody></table></div><div class="empty"><div class="ic">📈</div><h3>Sin prospectos</h3><p>Agrega tu primer prospecto con "+ Nuevo prospecto".</p></div>`;return h;}
+  lista.forEach(p=>{const e=etapaInfo(p.etapa);
+    h+=`<tr style="cursor:pointer" onclick="openProspecto('${p.id}')">
+      <td><b style="color:var(--navy)">${p.nombre}</b></td><td>${p.celular||"—"}</td><td>${p.ciudad||"—"}</td>
+      <td>${p.servicio||"—"}</td><td><span class="chip" style="background:${e.color}22;color:${e.color}">${e.t}</span></td>
+      <td>${p.proxContacto?fechaBonita(p.proxContacto):"—"}</td><td>${p.asesora||"—"}</td>
+      <td>${p.celular?`<a class="btn btn-wa btn-sm" href="https://wa.me/57${p.celular}" target="_blank" onclick="event.stopPropagation()">💬</a>`:''}</td>
+    </tr>`;});
+  h+=`</tbody></table></div></div>`;
+  return h;
+}
+function openProspecto(id){
+  const p=id?STATE.prospectos.find(x=>x.id===id):null;
+  const u=currentUser();
+  showModal(p?"Prospecto — "+p.nombre:"Nuevo prospecto",`
+    <div class="form-grid">
+      <div class="field"><label>Nombre completo</label><input class="inp" id="pr_nombre" value="${p?p.nombre:''}"></div>
+      <div class="field"><label>Celular</label><input class="inp" id="pr_cel" value="${p?p.celular||'':''}"></div>
+      <div class="field"><label>Ciudad</label><select class="inp" id="pr_ciudad">${optSel(["Ibague","Girardot","Rovira","Neiva"],p?p.ciudad:"Ibague")}</select></div>
+      <div class="field"><label>Servicio de interés</label><select class="inp" id="pr_serv">${optSel(["Seguridad Social","Admisión","Caja de Compensación","Crédito","Subsidio Vivienda","Pensión"],p?p.servicio:"Seguridad Social")}</select></div>
+      <div class="field"><label>Origen</label><select class="inp" id="pr_origen">${optSel(["Meta Ads","Orgánico","Referido","WhatsApp Directo"],p?p.origen:"Meta Ads")}</select></div>
+      <div class="field"><label>Etapa del pipeline</label><select class="inp" id="pr_etapa">${ETAPAS_PIPELINE.map(e=>`<option value="${e.k}" ${p&&p.etapa===e.k?'selected':''}>${e.t}</option>`).join("")}</select></div>
+      <div class="field"><label>Próximo contacto</label><input type="date" class="inp" id="pr_prox" value="${p?p.proxContacto||'':iso(hoy())}"></div>
+      <div class="field"><label>Valor potencial</label><input type="number" class="inp" id="pr_valor" value="${p?p.valorPotencial||0:0}"></div>
+      <div class="field full"><label>Observaciones</label><textarea class="inp" id="pr_obs" rows="2">${p?p.obs||'':''}</textarea></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px;justify-content:space-between">
+      ${p?`<button class="btn btn-sm" style="background:var(--red-bg);color:var(--red)" onclick="eliminarProspecto('${p.id}')">Eliminar</button>`:'<span></span>'}
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveProspecto(${p?`'${p.id}'`:'null'})">Guardar</button>
+      </div>
+    </div>`);
+}
+function saveProspecto(id){
+  const u=currentUser();
+  const data={nombre:val("pr_nombre"),celular:val("pr_cel").replace(/\D/g,"").slice(0,10),ciudad:val("pr_ciudad"),
+    servicio:val("pr_serv"),origen:val("pr_origen"),etapa:val("pr_etapa"),proxContacto:val("pr_prox"),
+    valorPotencial:+val("pr_valor")||0,obs:val("pr_obs")};
+  if(!data.nombre.trim()){toast("El nombre es obligatorio");return;}
+  if(id){
+    const p=STATE.prospectos.find(x=>x.id===id); Object.assign(p,data);
+  }else{
+    STATE.prospectos.push({id:uid(),...data,asesora:u.nombre,fecha:new Date().toISOString()});
+  }
+  save();closeModal();toast("Prospecto guardado");render();
+}
+function eliminarProspecto(id){
+  STATE.prospectos=STATE.prospectos.filter(p=>p.id!==id);
+  save();closeModal();toast("Prospecto eliminado");render();
+}
+async function exportPipeline(){
+  if(typeof ExcelJS==="undefined"){toast("No se pudo cargar el generador de Excel");return;}
+  const u=currentUser();
+  const datos = u.rol==="comercial" ? STATE.prospectos.filter(p=>p.asesora===u.nombre) : STATE.prospectos;
+  const wb=new ExcelJS.Workbook();
+  const ws=wb.addWorksheet("Pipeline Comercial");
+  try{const imgId=wb.addImage({base64:LOGO_SRC,extension:"jpeg"});ws.addImage(imgId,{tl:{col:0,row:0},ext:{width:50,height:50}});}catch(e){}
+  ws.mergeCells("B1:H1"); ws.getCell("B1").value="PIPELINE COMERCIAL — GEM"; ws.getCell("B1").font={bold:true,size:14,color:{argb:"FF0D1B2A"}};
+  const headers=["Nombre","Celular","Ciudad","Servicio","Etapa","Próximo contacto","Valor potencial","Asesora","Observaciones"];
+  const hr=ws.getRow(3); headers.forEach((h,i)=>{const c=hr.getCell(i+1);c.value=h;c.font={bold:true,color:{argb:"FFFFFFFF"}};c.fill={type:"pattern",pattern:"solid",fgColor:{argb:"FF0D1B2A"}};});
+  datos.forEach(p=>{const e=etapaInfo(p.etapa);
+    const row=ws.addRow([p.nombre,p.celular,p.ciudad,p.servicio,e.t,p.proxContacto,p.valorPotencial,p.asesora,p.obs]);
+    row.getCell(5).fill={type:"pattern",pattern:"solid",fgColor:{argb:"FF"+e.color.replace("#","")}};
+    row.getCell(5).font={color:{argb:"FFFFFFFF"},bold:true};
+  });
+  ws.columns=[{width:24},{width:13},{width:12},{width:20},{width:22},{width:15},{width:14},{width:18},{width:30}];
+  const buf=await wb.xlsx.writeBuffer();
+  const blob=new Blob([buf],{type:"application/octet-stream"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="Pipeline_Comercial_GEM.xlsx";a.click();
+  toast("Pipeline exportado");
+}
+
+// ─────────── RECIBOS ───────────
+const EMPRESA_RECIBO = {
+  Coomsertar:{nombre:"COOMSERTAR", razon:"COOPERATIVA MULTIACTIVA DE SERVICIOS INTEGRALES TÉCNICOS Y PROFESIONALES", nit:"809.012.409-5", prefijo:"RC8"},
+  Coopfisol:{nombre:"COOPFISOL", razon:"COOPERATIVA MULTIACTIVA FINANZAS SOLIDARIAS", nit:"901.976.791-4", prefijo:"RC1"},
+};
+function numeroALetras(n){
+  n=Math.round(n);
+  if(n===0)return "CERO PESOS MCTE.";
+  const UNI=["","UNO","DOS","TRES","CUATRO","CINCO","SEIS","SIETE","OCHO","NUEVE","DIEZ","ONCE","DOCE","TRECE","CATORCE","QUINCE","DIECISÉIS","DIECISIETE","DIECIOCHO","DIECINUEVE","VEINTE"];
+  const DEC=["","","VEINTI","TREINTA","CUARENTA","CINCUENTA","SESENTA","SETENTA","OCHENTA","NOVENTA"];
+  const CEN=["","CIENTO","DOSCIENTOS","TRESCIENTOS","CUATROCIENTOS","QUINIENTOS","SEISCIENTOS","SETECIENTOS","OCHOCIENTOS","NOVECIENTOS"];
+  function tresDig(x){
+    if(x===0)return "";
+    if(x===100)return "CIEN";
+    let s="";
+    const c=Math.floor(x/100), r=x%100;
+    if(c)s+=CEN[c]+" ";
+    if(r<=20)s+=UNI[r];
+    else{const d=Math.floor(r/10),u=r%10;
+      if(d===2 && u>0) s+="VEINTI"+UNI[u];
+      else{s+=DEC[d]; if(u>0)s+=" Y "+UNI[u];}}
+    return s.trim();
+  }
+  function grupo(x,sing,plur){
+    if(x===0)return "";
+    if(x===1)return sing;
+    return tresDig(x)+" "+plur;
+  }
+  let millones=Math.floor(n/1000000);
+  let miles=Math.floor((n%1000000)/1000);
+  let cientos=n%1000;
+  let partes=[];
+  if(millones)partes.push(grupo(millones,"UN MILLÓN","MILLONES"));
+  if(miles)partes.push(grupo(miles,"MIL","MIL"));
+  if(cientos)partes.push(tresDig(cientos));
+  return (partes.join(" ")||"CERO")+" PESOS MCTE.";
+}
+let reciboActual=null;
+function renderRecibos(){
+  if(!reciboActual) reciboActual={empresa:"Coomsertar",concepto:"Aportes Asociado",nombre:"",documento:"",zona:"Ibague",
+    fecha:iso(hoy()),metodo:"Efectivo",items:[{desc:"",valor:0}]};
+  const r=reciboActual;
+  let h=head("🧾 Recibos","Genera el recibo de caja con los datos de la empresa. Busca por cédula para autocompletar si el cliente ya existe.");
+  h+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px" class="dash-cols">
+    <div class="panel">
+      <div class="panel-title">Datos del recibo</div>
+      <div class="form-grid">
+        <div class="field"><label>Empresa</label><select class="inp" onchange="reciboActual.empresa=this.value;render()">${optSel(["Coomsertar","Coopfisol"],r.empresa)}</select></div>
+        <div class="field"><label>Fecha</label><input type="date" class="inp" value="${r.fecha}" onchange="reciboActual.fecha=this.value;render()"></div>
+        <div class="field full"><label>Buscar por cédula (autocompleta si existe)</label>
+          <input class="inp" placeholder="Escribe la cédula…" oninput="buscarPorCedula(this.value)"></div>
+        <div class="field"><label>Nombre</label><input class="inp" value="${r.nombre}" onchange="reciboActual.nombre=this.value;render()"></div>
+        <div class="field"><label>Documento</label><input class="inp" value="${r.documento}" onchange="reciboActual.documento=this.value;render()"></div>
+        <div class="field"><label>Zona / Ciudad</label><select class="inp" onchange="reciboActual.zona=this.value;render()">${optSel(["Ibague","Girardot","Rovira","Neiva"],r.zona)}</select></div>
+        <div class="field"><label>Concepto</label><select class="inp" onchange="reciboActual.concepto=this.value;render()">${optSel(["Aportes Asociado","Cuota de Crédito","Admisión","Subsidio de Vivienda","Otro"],r.concepto)}</select></div>
+        <div class="field"><label>Forma de pago</label><select class="inp" onchange="reciboActual.metodo=this.value;render()">${optSel(["Efectivo","Bancolombia"],r.metodo)}</select></div>
+      </div>
+      <div style="margin-top:14px">
+        <label style="font-size:11.5px;font-weight:600;color:var(--gray)">Detalle (concepto y valor)</label>
+        ${r.items.map((it,i)=>`<div style="display:flex;gap:6px;margin-top:6px">
+          <input class="inp" style="flex:2" placeholder="Descripción" value="${it.desc}" onchange="reciboActual.items[${i}].desc=this.value">
+          <input type="number" class="inp" style="flex:1" placeholder="Valor" value="${it.valor}" onchange="reciboActual.items[${i}].valor=+this.value;render()">
+          <button class="btn btn-ghost btn-sm" onclick="reciboActual.items.splice(${i},1);render()">✕</button>
+        </div>`).join("")}
+        <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="reciboActual.items.push({desc:'',valor:0});render()">+ Agregar línea</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="confirmarRecibo()">✅ Generar recibo N°</button>
+        <button class="btn btn-ghost" onclick="reciboActual=null;render()">Limpiar</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Vista previa</div>
+      <div id="reciboPreview">${reciboHTML(r)}</div>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" onclick="copiarRecibo()">📋 Copiar</button>
+        <button class="btn btn-ghost btn-sm" onclick="descargarRecibo()">⭳ Descargar imagen</button>
+        <button class="btn btn-ghost btn-sm" onclick="imprimirRecibo()">🖨️ Imprimir</button>
+      </div>
+    </div>
+  </div>
+  ${STATE.recibos.length?`<div class="panel"><div class="panel-title">Historial de recibos generados</div>
+    <div class="tbl-wrap"><table class="tbl"><thead><tr><th>N°</th><th>Fecha</th><th>Empresa</th><th>Nombre</th><th>Valor</th></tr></thead><tbody>
+    ${STATE.recibos.slice().reverse().slice(0,20).map(rc=>`<tr><td>${rc.numero}</td><td>${fechaBonita(rc.fecha)}</td><td>${rc.empresa}</td><td>${rc.nombre}</td><td>${fmt(rc.total)}</td></tr>`).join("")}
+    </tbody></table></div></div>`:''}`;
+  return h;
+}
+function buscarPorCedula(doc){
+  if(doc.length<4)return;
+  const c=STATE.creditos.find(x=>x.clienteDoc===doc);
+  if(c){reciboActual.nombre=c.nombre;reciboActual.documento=c.clienteDoc;reciboActual.zona=c.sede;
+    reciboActual.empresa=c.entidad; toast("Cliente encontrado: "+c.nombre); render();}
+}
+function reciboHTML(r){
+  const emp=EMPRESA_RECIBO[r.empresa];
+  const total=r.items.reduce((s,i)=>s+(+i.valor||0),0);
+  return `<div id="reciboImg" style="width:520px;background:#fff;border:1px solid #ccc;padding:18px;font-family:Arial,sans-serif;font-size:11.5px;color:#111">
+    <div style="display:flex;justify-content:space-between;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:8px">
+      <div><b style="font-size:15px">${emp.nombre}</b><br><span style="font-size:9.5px">${emp.razon}</span><br><span style="font-size:9.5px">NIT: ${emp.nit}</span></div>
+      <div style="text-align:right"><b>RECIBO DE CAJA</b><br>No: ${emp.prefijo}-XXXX<br>${fechaBonita(r.fecha)}</div>
+    </div>
+    <div style="margin-bottom:6px"><b>Concepto:</b> ${r.concepto}</div>
+    <div style="margin-bottom:6px"><b>Recibido de:</b> ${r.nombre||"—"} &nbsp; <b>NIT/C.C.:</b> ${r.documento||"—"} &nbsp; <b>Zona:</b> ${r.zona}</div>
+    <table style="width:100%;border-collapse:collapse;margin:8px 0;font-size:11px">
+      <tr style="background:#f0f0f0"><td style="padding:4px;border:1px solid #ccc">Detalle</td><td style="padding:4px;border:1px solid #ccc;text-align:right">Valor</td></tr>
+      ${r.items.map(i=>`<tr><td style="padding:4px;border:1px solid #ccc">${i.desc||"—"}</td><td style="padding:4px;border:1px solid #ccc;text-align:right">${fmt(i.valor)}</td></tr>`).join("")}
+      <tr style="font-weight:bold"><td style="padding:4px;border:1px solid #ccc">TOTAL</td><td style="padding:4px;border:1px solid #ccc;text-align:right">${fmt(total)}</td></tr>
+    </table>
+    <div style="margin-bottom:10px;font-size:10.5px"><b>Son:</b> ${numeroALetras(total)}</div>
+    <div style="margin-bottom:14px;font-size:10.5px">Forma de pago: <b>${r.metodo}</b></div>
+    <div style="display:flex;justify-content:space-between;margin-top:24px;font-size:9.5px;text-align:center">
+      <div style="border-top:1px solid #111;width:30%;padding-top:3px">Elaboró</div>
+      <div style="border-top:1px solid #111;width:30%;padding-top:3px">Revisó</div>
+      <div style="border-top:1px solid #111;width:30%;padding-top:3px">Aprobó</div>
+    </div>
+  </div>`;
+}
+function confirmarRecibo(){
+  const r=reciboActual;
+  if(!r.nombre.trim()){toast("Falta el nombre del recibido");return;}
+  const emp=EMPRESA_RECIBO[r.empresa];
+  if(!STATE.contadorRecibos[r.empresa])STATE.contadorRecibos[r.empresa]=1860;
+  STATE.contadorRecibos[r.empresa]++;
+  const numero=`${emp.prefijo}-${STATE.contadorRecibos[r.empresa]}`;
+  const total=r.items.reduce((s,i)=>s+(+i.valor||0),0);
+  STATE.recibos.push({id:uid(),numero,fecha:r.fecha,empresa:r.empresa,nombre:r.nombre,documento:r.documento,total,items:[...r.items]});
+  save();
+  reciboActual._numeroGenerado=numero;
+  document.getElementById("reciboPreview").innerHTML=reciboHTML(r).replace("XXXX",STATE.contadorRecibos[r.empresa]);
+  toast("Recibo "+numero+" generado");
+  render();
+}
+function copiarRecibo(){
+  const r=reciboActual; const emp=EMPRESA_RECIBO[r.empresa]; const total=r.items.reduce((s,i)=>s+(+i.valor||0),0);
+  const texto=`${emp.nombre}\nRecibo de caja\nFecha: ${fechaBonita(r.fecha)}\nConcepto: ${r.concepto}\nRecibido de: ${r.nombre} - CC ${r.documento}\nTotal: ${fmt(total)}\nSon: ${numeroALetras(total)}`;
+  navigator.clipboard.writeText(texto).then(()=>toast("Recibo copiado al portapapeles"));
+}
+function descargarRecibo(){
+  if(typeof html2canvas==="undefined"){toast("No se pudo cargar el generador de imágenes");return;}
+  html2canvas(document.getElementById("reciboImg"),{scale:2}).then(canvas=>{
+    const a=document.createElement("a");a.href=canvas.toDataURL("image/png");a.download="Recibo_GEM.png";a.click();
+  });
+}
+function imprimirRecibo(){
+  const contenido=document.getElementById("reciboImg").outerHTML;
+  const w=window.open("","_blank");
+  w.document.write(`<html><head><title>Recibo</title><style>
+    @page{size:5.5in 8.5in;margin:10px} body{font-family:Arial,sans-serif}
+  </style></head><body>${contenido}</body></html>`);
+  w.document.close(); setTimeout(()=>w.print(),300);
+}
+
+// ─────────── PLANTILLAS RÁPIDAS ───────────
+function renderConfig(){
+  let h=head("📋 Plantillas rápidas","Mensajes de WhatsApp listos para usar, con negrilla, emojis y el nombre correcto de cada empresa. Edítalos aquí y se aplican en toda la app.");
+  h+=`<div class="panel"><div class="panel-title">💬 Plantillas de WhatsApp por situación</div>
+    <div style="font-size:12.5px;color:var(--gray);margin-bottom:14px">Usa <b>{nombre}</b>, <b>{cuota}</b>, <b>{vence}</b> y <b>{empresa}</b> — se reemplazan automáticamente. <i>*texto*</i> se ve en <b>negrilla</b> y <i>_texto_</i> en <i>cursiva</i> dentro de WhatsApp.</div>`;
+  const pl=[
+    ["r3","🟡 Recordatorio 3 días"],["r2","🟠 Recordatorio 2 días"],["r1","🔴 Recordatorio 1 día"],
+    ["hoy","🔴 Vence hoy"],["vencida","🆘 Cuota vencida"],
+    ["promesa","🤝 Promesa de pago"],["comprobante","📎 Solicitud de comprobante"]
+  ];
+  pl.forEach(([k,t])=>{h+=`<div class="field" style="margin-bottom:14px"><label style="font-size:13px">${t}</label>
+    <textarea class="inp" rows="4" style="font-family:inherit;line-height:1.5" onchange="STATE.plantillas.${k}=this.value;save();toast('Plantilla guardada')">${STATE.plantillas[k]}</textarea></div>`;});
+  h+=`</div>
+  <div class="panel"><div class="panel-title">⚙️ Datos del sistema</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-ghost" onclick="exportBackup()">⭳ Descargar respaldo (JSON)</button>
+      <button class="btn btn-ghost" onclick="if(confirm('¿Borrar todos los datos y volver a los datos de ejemplo?')){localStorage.removeItem(STORE_KEY);location.reload();}">Reiniciar datos</button>
+    </div>
+    <div style="font-size:12px;color:var(--gray);margin-top:10px">En el MVP los datos se guardan en este dispositivo/navegador. En producción estarán centralizados y con respaldo automático.</div>
+  </div>`;
+  return h;
+}
+function exportBackup(){
+  const blob=new Blob([JSON.stringify(STATE,null,2)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="respaldo_GEM_"+iso(hoy())+".json";a.click();
+  toast("Respaldo descargado");
+}
+
+// ─────────── BÚSQUEDA GLOBAL ───────────
+function globalSearchHandler(q){
+  const box=document.getElementById("searchResults");
+  if(!q||q.length<2){box.classList.remove("show");return;}
+  const ql=q.toLowerCase();
+  const res=visibleCreditos().filter(c=>c.nombre.toLowerCase().includes(ql)||(c.clienteDoc||"").includes(q)||(c.celular||"").includes(q)).slice(0,8);
+  if(!res.length){box.innerHTML=`<div style="padding:14px;color:var(--gray);font-size:12.5px">Sin resultados para "${q}"</div>`;box.classList.add("show");return;}
+  box.innerHTML=`<div class="sr-group">Clientes y créditos</div>`+res.map(c=>`<div class="sr-item" onclick="openCliente('${c.id}');hideSearch()">
+    <div class="n">${c.nombre}</div><div class="d">CC ${c.clienteDoc} · ${c.sede} · ${fmt(c.saldoTotal)}</div></div>`).join("");
+  box.classList.add("show");
+}
+function hideSearch(){document.getElementById("searchResults").classList.remove("show");}
+
+// ─────────── ARRANQUE ───────────
+window.addEventListener("DOMContentLoaded",boot);
+</script>
+</body>
+</html>
