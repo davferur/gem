@@ -12,8 +12,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
-<style>
-:root{
+<style>:root{
   --navy:#0A2540; --navy2:#0F3557; --gold:#C6820E; --gold-l:#E8A33D;
   --gold-lt:#F4B860; --cream:#FBF8F1; --marfil:#F4EFE4; --paper:#FFFFFF;
   --ink:#16202E; --gray:#5A6B7B; --gray-l:#8A97A5; --line:#E3E8EE;
@@ -682,6 +681,19 @@ table.tbl th,table.tbl td{padding:8px 11px;font-size:13px}
 /* — Encabezado de sección con emoji — */
 .gx-sec-emoji{font-size:40px;display:block;margin-bottom:10px;animation:gxFloat 3.8s ease-in-out infinite}
 
+/* ═══════════ GALERÍA DEL EQUIPO (estilo CDA: fotos reales) ═══════════ */
+.team-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:22px}
+.team-card{position:relative;border-radius:20px;overflow:hidden;aspect-ratio:3/4;box-shadow:0 10px 30px rgba(10,37,64,.12);transition:transform .28s,box-shadow .28s}
+.team-card:hover{transform:translateY(-8px);box-shadow:0 22px 48px rgba(10,37,64,.22)}
+.team-card img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s}
+.team-card:hover img{transform:scale(1.06)}
+.team-card .tc-overlay{position:absolute;inset:0;background:linear-gradient(180deg,transparent 45%,rgba(10,37,64,.88) 100%);
+  display:flex;align-items:flex-end;padding:18px}
+.team-card .tc-info{color:#fff}
+.team-card .tc-info .nm{font-weight:800;font-size:15.5px;line-height:1.25}
+.team-card .tc-info .rl{font-size:12px;color:#F4B860;font-weight:700;margin-top:2px}
+.team-wide{grid-column:span 2;aspect-ratio:16/9}
+@media(max-width:640px){.team-wide{grid-column:span 1;aspect-ratio:4/3}.team-card{aspect-ratio:4/3}}
 </style>
 </head>
 <body>

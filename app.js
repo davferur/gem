@@ -3155,6 +3155,20 @@ function renderDocsPublico(){
     </div>`;
   }).join("");
 }
+function renderTeamGrid(){
+  const g=document.getElementById("teamGrid"); if(!g) return;
+  g.innerHTML = TEAM_GEM.map((p,i)=>`
+    <div class="team-card gx-reveal ${i===0?'team-wide':''}">
+      <img src="${p.img}" alt="${p.nombre}" loading="lazy">
+      <div class="tc-overlay">
+        <div class="tc-info">
+          <div class="nm">${p.nombre}</div>
+          <div class="rl">${p.cargo}</div>
+        </div>
+      </div>
+    </div>`).join("");
+  initReveal();
+}
 // Inicializa elementos comunes de CUALQUIER página pública (llamar en cada .html)
 function initPagina(paginaActiva){
   document.querySelectorAll(".gem-logo-img").forEach(img=>{ img.src=LOGO_SRC; });
@@ -3165,6 +3179,7 @@ function initPagina(paginaActiva){
   renderArticuloDesdeURL();
   renderServiciosGx();
   renderFAQ();
+  renderTeamGrid();
   initReveal();
   // marcar el pill activo del nav
   if(paginaActiva){
@@ -3262,7 +3277,7 @@ function toggleIA(){
     const logueado = !clienteAbierto && !!(STATE.currentUserId && getUser(STATE.currentUserId));
     if(logueado){
       const u=getUser(STATE.currentUserId);
-      iaBot(`¡Hola! 👋 Soy el asistente interno de GEM. Puedo responder sobre cartera, cobros, pagos y pipeline según tu rol. ¿En qué te ayudo, ${u.nombre}?`);
+      iaBot(`¡Hola! 👋 Soy el asistente del equipo GEM. Puedo responder sobre cartera, cobros, pagos y pipeline según tu rol. ¿En qué te ayudo, ${u.nombre}?`);
     } else {
       iaBot("¡Hola! 👋 Soy el asistente de GEM. Puedo contarte sobre nuestros servicios y explicarte temas de seguridad social (salud, pensión, ARL, caja). ¿Qué te gustaría saber?");
     }
