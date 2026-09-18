@@ -3265,6 +3265,15 @@ function renderArticuloDesdeURL(){
 // ═══════════════════════════════════════════════════════════
 // BLOQUE 4: ASISTENTE IA + NOTIFICACIONES
 // ═══════════════════════════════════════════════════════════
+// El asistente es "logueado" (admin) únicamente si el panel administrativo
+// está realmente visible en pantalla en este momento — nunca por solo existir
+// una sesión guardada, que se conserva entre páginas públicas y no debe filtrar
+// datos ni sugerencias internas a un visitante cualquiera.
+function esAdminVisible(){
+  const el=document.getElementById("app");
+  const visible = el && el.style.display!=="none" && el.style.display!=="";
+  return visible && !!(STATE.currentUserId && getUser(STATE.currentUserId));
+}
 let iaAbierto=false;
 function toggleIA(){
   iaAbierto=!iaAbierto;
@@ -3273,8 +3282,7 @@ function toggleIA(){
     // re-inicializar el saludo según contexto (público o logueado)
     const b=document.getElementById("iaBody");
     b.innerHTML=""; b.dataset.init="1";
-    const clienteAbierto = (()=>{const el=document.getElementById("cliente-app"); return el && el.style.display!=="none" && el.style.display!=="";})();
-    const logueado = !clienteAbierto && !!(STATE.currentUserId && getUser(STATE.currentUserId));
+    const logueado = esAdminVisible();
     if(logueado){
       const u=getUser(STATE.currentUserId);
       iaBot(`¡Hola! 👋 Soy el asistente del equipo GEM. Puedo responder sobre cartera, cobros, pagos y pipeline según tu rol. ¿En qué te ayudo, ${u.nombre}?`);
@@ -3313,8 +3321,7 @@ function preguntarIA(texto){
 }
 function responderIA(q){
   const t=q.toLowerCase();
-  const clienteAbierto = (()=>{const el=document.getElementById("cliente-app"); return el && el.style.display!=="none" && el.style.display!=="";})();
-  const logueado = !clienteAbierto && !!(STATE.currentUserId && getUser(STATE.currentUserId));
+  const logueado = esAdminVisible();
   const cs=STATE.creditos||[];
   const fmt2=n=>"$"+Math.round(n).toLocaleString("es-CO");
   // ── SEGURIDAD: si el usuario NO tiene sesión, el asistente NO revela métricas ──
