@@ -338,11 +338,9 @@ async function boot(){
     }
   }
   if(!STATE.empresaActiva) STATE.empresaActiva="Coomsertar";
-  if(STATE.currentUserId && getUser(STATE.currentUserId)){
-    mostrarOverlay("app");
-    buildNav(); buildMobileBar(); buildEmpresaBar(); updateUserChip();
-    render();
-  }
+  // No se abre el portal automáticamente al cargar una página pública.
+  // La sesión se conserva: si el usuario pulsa "Ingresar", entra directo sin volver a escribir credenciales.
+  ocultarOverlays();
 }
 function actualizarIndicadorNube(ok){
   // muestra en el sidebar si está conectado a la nube
@@ -2792,11 +2790,26 @@ function mostrarOverlay(id){
   document.body.style.overflow="hidden";
 }
 function irAlPortal(){ // desde cualquier página pública, botón Ingresar
+  // Si ya hay una sesión de equipo activa, entrar directo al portal administrativo.
+  if(STATE.currentUserId && getUser(STATE.currentUserId)){
+    mostrarOverlay("app");
+    buildNav(); buildMobileBar(); buildEmpresaBar(); updateUserChip();
+    render();
+    return;
+  }
   const pl=document.getElementById("pickerLogo"); if(pl) pl.src=LOGO_SRC;
   mostrarOverlay("portal-picker");
 }
 function volverLanding(){ ocultarOverlays(); window.scrollTo(0,0); }
-function entrarAdmin(){ mostrarOverlay("login"); }
+function entrarAdmin(){
+  if(STATE.currentUserId && getUser(STATE.currentUserId)){
+    mostrarOverlay("app");
+    buildNav(); buildMobileBar(); buildEmpresaBar(); updateUserChip();
+    render();
+    return;
+  }
+  mostrarOverlay("login");
+}
 function entrarCliente(){ mostrarOverlay("cliente-app"); renderLoginCliente(); }
 
 // Login del cliente por cédula (usuario y contraseña = cédula)
