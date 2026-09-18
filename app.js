@@ -2960,13 +2960,22 @@ const EDU_TEMAS = [
 ];
 function renderEduGrid(){
   const g=document.getElementById("eduGrid"); if(!g) return;
-  g.innerHTML = EDU_TEMAS.map((e,i)=>`
-    <div class="lp-edu-card" onclick="abrirEdu(${i})">
-      <div class="ic">${e.ic}</div>
-      <h4>${e.t}</h4>
-      <p>${e.desc.slice(0,90)}…</p>
-      <div class="ver">Leer más →</div>
-    </div>`).join("");
+  const COLORES=["#1B6CA8","#1E8E5A","#CA6F1E","#8E44AD","#16A085","#C0392B","#0A2540"];
+  g.className="gx-grid";
+  g.innerHTML = EDU_TEMAS.map((e,i)=>{
+    const c=COLORES[i%COLORES.length];
+    return `<div class="gx-card gx-reveal" onclick="abrirEdu(${i})" style="cursor:pointer">
+      <span class="gx-bub b1" style="background:${c}"></span>
+      <span class="gx-bub b2" style="background:${c}"></span>
+      <span class="gx-emoji" style="background:${c}1f">${e.ic}
+        <span style="position:absolute;inset:-6px;border-radius:24px;box-shadow:0 0 0 6px ${c}14"></span>
+      </span>
+      <h3>${e.t}</h3>
+      <p>${e.desc.slice(0,95)}…</p>
+      <div style="margin-top:13px;font-size:13px;font-weight:700;color:${c}">Leer más →</div>
+    </div>`;
+  }).join("");
+  initReveal();
 }
 function abrirEdu(i){
   const e=EDU_TEMAS[i];
@@ -3040,6 +3049,94 @@ function quitarDoc(empresa,i){
     STATE.documentos[empresa].splice(i,1); save(); render();
   }
 }
+// ═══════════════════════════════════════════════════════════
+// SISTEMA DE DISEÑO — tarjetas con emoji/color, FAQ, reveal
+// ═══════════════════════════════════════════════════════════
+function gxCard(o){
+  // o: {ic, color, titulo, texto, href}
+  const tag = o.href ? "a" : "div";
+  const hrefAttr = o.href ? ` href="${o.href}"` : "";
+  return `<${tag} class="gx-card"${hrefAttr} style="--gxc:${o.color}">
+    <span class="gx-bub b1" style="background:${o.color}"></span>
+    <span class="gx-bub b2" style="background:${o.color}"></span>
+    <span class="gx-emoji" style="background:${o.color}1f">${o.ic}
+      <span style="position:absolute;inset:-6px;border-radius:24px;box-shadow:0 0 0 6px ${o.color}14"></span>
+    </span>
+    <h3>${o.titulo}</h3>
+    <p>${o.texto}</p>
+  </${tag}>`;
+}
+
+// ─── Servicios con emoji, color propio y halo ───
+const SERVICIOS_GEM=[
+  {ic:"🏥",color:"#1B6CA8",titulo:"Seguridad Social",
+   texto:"Afiliación y pago de <b>salud, pensión y ARL</b>. Quedas en regla desde el primer día, con acompañamiento en todo el proceso."},
+  {ic:"👨‍👩‍👧",color:"#1E8E5A",titulo:"Caja de Compensación",
+   texto:"Accede a <b>subsidio familiar</b>, recreación, educación y descuentos para ti y tu familia."},
+  {ic:"💳",color:"#CA6F1E",titulo:"Créditos",
+   texto:"Créditos <b>por libranza y según tus aportes</b>, con condiciones claras y cuotas a tu medida."},
+  {ic:"🏠",color:"#8E44AD",titulo:"Subsidio de Vivienda",
+   texto:"Te guiamos para aplicar al subsidio de <b>hasta $52 millones</b> aportando a caja de compensación."},
+];
+function renderServiciosGx(){
+  const g=document.getElementById("serviciosGx"); if(!g) return;
+  g.innerHTML=SERVICIOS_GEM.map(s=>gxCard(s)).join("");
+}
+
+// ─── FAQ (acordeón que NO salta al inicio) ───
+const FAQ_GEM=[
+  {ic:"📝",q:"¿Qué necesito para afiliarme a seguridad social con GEM?",
+   a:"Solo tu <b>documento de identidad</b> y tus datos de contacto. Nosotros nos encargamos del resto: liquidamos tu planilla, gestionamos la afiliación y te confirmamos cuando quedes activo. La asesoría es <b>totalmente gratuita</b>."},
+  {ic:"💰",q:"¿Cuánto cuesta cotizar como independiente?",
+   a:"El aporte se calcula sobre el <b>40% de tus ingresos mensuales</b> y cubre salud, pensión y riesgos laborales. El valor exacto depende de lo que declares; escríbenos y te hacemos el cálculo sin compromiso."},
+  {ic:"🏠",q:"¿Cómo accedo al subsidio de vivienda?",
+   a:"Debes estar afiliado a una <b>caja de compensación</b> y aportar de forma constante durante al menos <b>6 meses</b>. Luego te ayudamos a reunir requisitos y postularte. El subsidio puede llegar hasta <b>$52 millones</b>."},
+  {ic:"⏱️",q:"¿Cuánto tarda el proceso de afiliación?",
+   a:"En la mayoría de los casos la afiliación queda lista <b>el mismo día o al día siguiente</b> del pago. Te avisamos apenas esté activa para que puedas usar tus servicios."},
+  {ic:"⚠️",q:"¿Qué pasa si me atraso en un pago?",
+   a:"Pierdes temporalmente la cobertura de salud y ARL hasta ponerte al día. Por eso te <b>recordamos antes de cada vencimiento</b>. Si ya vas atrasado, escríbenos: te ayudamos a normalizar tu situación."},
+  {ic:"⚖️",q:"¿Me conviene fondo privado o Colpensiones?",
+   a:"Depende de tu <b>edad, ingresos y semanas cotizadas</b>. Colpensiones suele convenir a ingresos medios y altos con muchas semanas; los fondos privados permiten heredar el saldo. Te orientamos <b>sin sesgos</b> para que decidas bien."},
+  {ic:"📍",q:"¿En qué ciudades atienden?",
+   a:"Tenemos sede principal en <b>Ibagué</b> y atención en <b>Girardot</b> y <b>Neiva</b>. También te acompañamos por WhatsApp desde cualquier lugar del país."},
+  {ic:"💳",q:"¿Cómo puedo consultar mis pagos?",
+   a:"Desde el <b>Portal del Cliente</b> de esta página. Ingresas con tu número de documento y puedes ver tu plan, tu próxima cuota, el historial de pagos y descargar tu certificado."},
+];
+function renderFAQ(){
+  const g=document.getElementById("faqWrap"); if(!g) return;
+  g.innerHTML=FAQ_GEM.map((f,i)=>`
+    <div class="faq-item" id="faq-${i}">
+      <button class="faq-q" type="button" onclick="toggleFAQ(${i},event)">
+        <span class="faq-ic">${f.ic}</span>
+        <span class="faq-txt">${f.q}</span>
+        <span class="faq-arrow">▼</span>
+      </button>
+      <div class="faq-a"><p>${f.a}</p></div>
+    </div>`).join("");
+}
+function toggleFAQ(i,ev){
+  // Cada pregunta abre y cierra de forma independiente: al no colapsar las demás,
+  // el contenido nunca se desplaza bajo el cursor ni salta al inicio.
+  if(ev){ ev.preventDefault(); ev.stopPropagation(); }
+  const item=document.getElementById("faq-"+i); if(!item) return;
+  item.classList.toggle("abierto");
+}
+
+// ─── Aparición progresiva al hacer scroll ───
+function initReveal(){
+  const els=document.querySelectorAll(".gx-reveal");
+  if(!els.length) return;
+  if(!("IntersectionObserver" in window)){ els.forEach(e=>e.classList.add("visible")); return; }
+  const io=new IntersectionObserver((entradas)=>{
+    entradas.forEach((e,idx)=>{
+      if(e.isIntersecting){
+        setTimeout(()=>e.target.classList.add("visible"), idx*70);
+        io.unobserve(e.target);
+      }
+    });
+  },{threshold:.12, rootMargin:"0px 0px -40px 0px"});
+  els.forEach(e=>io.observe(e));
+}
 // Documentación pública por empresa (página empresas.html)
 function renderDocsPublico(){
   const g=document.getElementById('docsPublicoGrid'); if(!g) return;
@@ -3066,6 +3163,9 @@ function initPagina(paginaActiva){
   renderEduGrid();
   renderBlogPublico();
   renderArticuloDesdeURL();
+  renderServiciosGx();
+  renderFAQ();
+  initReveal();
   // marcar el pill activo del nav
   if(paginaActiva){
     document.querySelectorAll(".gnav-pill").forEach(p=>{
